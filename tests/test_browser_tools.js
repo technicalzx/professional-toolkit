@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+const {calculate, audit} = require('../app/browser-tools.js');
+assert.equal(calculate('pricing',{income:900,costs:100,hours:100,fee:20})['Hourly rate'],12.5);
+assert.throws(()=>calculate('pricing',{income:1,costs:0,hours:1,fee:100}));
+assert.equal(calculate('gpa',{scale:4,courses:[{grade:4,credits:3},{grade:2,credits:1}]}).GPA,3.5);
+assert.throws(()=>calculate('percentage',{earned:1,total:0}));
+assert.throws(()=>calculate('percentage',{earned:NaN,total:100}));
+assert.throws(()=>calculate('percentage',{earned:'',total:100}));
+assert.equal(audit({platform:'LinkedIn',headline:'Engineer'})['Completeness score'],20);
+assert.throws(()=>audit({platform:'Unknown',headline:'Hello'}));
+console.log('PASS: 8 browser tool assertions');
