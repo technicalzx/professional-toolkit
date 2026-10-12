@@ -4,7 +4,7 @@ Updated 13 October 2026 (Asia/Karachi).
 ## Verified project and connection status
 The existing application is in hosted-app/ and has first-party accounts, D1-backed private reports, URL import, transparent profile checks, brief matching, proposal outlines and calculators. Its review deployment is owner-private on Sites. Sites-managed resources are separate from resources in your connected Cloudflare account; attaching the plugin does not transfer them.
 
-Cloudflare identity and account listing succeeded. Subscription/settings inspection returned Cloudflare API error 10000 (Authentication error). The account plan, permissions and usage are therefore NOT verified. No Cloudflare resources, subscriptions or paid features were created or changed in this investigation. Browser Claude/Kimi sessions were not inspected or used.
+Cloudflare identity, account listing, Workers script listing, D1 database listing and Workers account-settings reads succeeded on the recheck. Workers and D1 list results were empty. Settings returned default_usage_model=standard; this is not proof of a Free subscription. Subscription listing still returned Cloudflare API error 10000 (Authentication error). Read access to Workers and D1 is verified; write access, account plan and usage are NOT verified. No Cloudflare resources, subscriptions or paid features were created or changed in this investigation. Browser Claude/Kimi sessions were not inspected or used.
 
 ## Deployment decision
 Do not migrate the entire existing backend unchanged to Workers Free. Cloudflare documents 10 ms CPU per invocation on that plan. The current password KDF is scrypt N=32768/r=8/p=3: local Worker integration tests prove functionality, not Free-plan CPU compatibility. Treat password authentication as a blocking compatibility gate. Never reduce password protection merely to meet a hosting limit.
@@ -60,7 +60,7 @@ Acceptance: concurrent budget tests, exhausted-quota fallback, no private data i
 Add keyboard/mobile review, basic service health, private error reporting, versioned prompts and fixtures. Keep secrets server-side. Test account recovery, deletion, abuse controls and restore. Change site audience only when explicitly authorized; public source code does not imply a public deployment.
 
 ## What the user can resolve
-Reconnect the Cloudflare plugin to the intended account and grant the read/manage permissions needed for Workers and D1; subscription/plan visibility may require a separate billing permission. Do not share raw API tokens in chat. Confirm Workers Free in the Cloudflare dashboard if billing metadata remains inaccessible. No paid upgrade is necessary for this investigation.
+Workers and D1 read access now succeeds; reconnecting solely for those reads is unnecessary. Confirm Workers Free under Workers & Pages / account plan in the Cloudflare dashboard, or grant the connector subscription/plan read access if supported. A website-zone Free plan is not proof of a Workers Free plan. If sharing a screenshot, exclude tokens, account keys and payment details. Do not share raw API tokens in chat. Resource provisioning remains pending plan verification and authentication CPU compatibility. No paid upgrade is necessary for this investigation.
 
 The uploaded image(3).png was unavailable at its supplied local path. It is not needed to complete this plan; reattach only if it contains a specific error you want diagnosed.
 
