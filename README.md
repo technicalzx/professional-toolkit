@@ -1,5 +1,11 @@
 # Professional Toolkit
 
+**Current review release: v0.2.** The upgraded React/TypeScript application and URL importer are in [hosted-app](hosted-app/). See the [upgrade roadmap](hosted-app/docs/UPGRADE_PLAN.md) and [validation record](hosted-app/docs/VALIDATION.md).
+
+Review site: https://professional-toolkit-review.honestcove32.chatgpt.site (owner-private).
+
+The root Python app below is retained as the original local starter. The hosted application is the current review experience.
+
 An open-source workspace for freelancers, careers, personal branding and practical professional calculations, based on the owner's product brief.
 
 ## Current milestone
