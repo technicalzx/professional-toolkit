@@ -155,3 +155,14 @@ export async function reportStore(request,db){
   return json({id},201);
  }catch(e){if(e instanceof AuthError)return json({error:e.message},e.status);console.error('report_operation_failed');return json({error:'Report storage unavailable. Please try again.'},503)}
 }
+
+/** Reserve import attempts before network activity. Failed imports consume their reservation. */
+export async function authorizeImport(request,db){
+ try{
+  if(!db)fail('Account storage is temporarily unavailable.',503);
+  const user=await currentUser(request,db);if(!user)fail('Sign in to import a public page.',401);
+  await rate(db,`import-user:${user.id}`,5);
+  await rate(db,'import-global',100);
+  return null;
+ }catch(e){if(e instanceof AuthError)return json({error:e.message,code:e.status===429?'IMPORT_QUOTA':'IMPORT_AUTH'},e.status);return json({error:'Import authorization unavailable.',code:'IMPORT_AUTH'},503)}
+}

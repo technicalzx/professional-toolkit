@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 const require=createRequire(import.meta.url),wr=createRequire(require.resolve('wrangler/package.json'));
 const {Miniflare}=wr('miniflare');
 const pass='a unique long passphrase 2026';
 test('first-party authentication and private reports in the Worker/D1 runtime',async t=>{
  const source=fs.readFileSync(new URL('../lib/auth/service.mjs',import.meta.url),'utf8');
- const mf=new Miniflare({modules:true,script:source+'\nexport default {fetch(r,e){return new URL(r.url).pathname==="/api/reports"?reportStore(r,e.DB):account(r,e.DB)}}',compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']});
+ const mf=new Miniflare({modules:true,script:source+'\nexport default {fetch(r,e){if(new URL(r.url).pathname==="/api/import")return authorizeImport(r,e.DB).then(x=>x||Response.json({ok:true}));return new URL(r.url).pathname==="/api/reports"?reportStore(r,e.DB):account(r,e.DB)}}',compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']});
  try{
  const db=await mf.getD1Database('DB');
  const sql=fs.readFileSync(new URL('../drizzle/0000_swift_wendigo.sql',import.meta.url),'utf8');
@@ -88,6 +89,16 @@ test('first-party authentication and private reports in the Worker/D1 runtime',a
   assert.equal((await call({action:'logout-all'},one.cookie)).status,200);
   assert.equal((await call(null,one.cookie)).body.user,null);
   assert.equal((await call(null,two.cookie)).body.user,null);
+ });
+ await t.test('import requires a session and reserves user/global quotas before network work',async()=>{
+  assert.equal((await call({url:'https://example.com'},'','/api/import')).status,401);
+  const u=await call({action:'register',username:'import-user',name:'Importer',password:pass});
+  for(let i=0;i<5;i++)assert.equal((await call({url:'https://example.com'},u.cookie,'/api/import')).status,200);
+  assert.equal((await call({url:'https://example.com'},u.cookie,'/api/import')).status,429);
+  const key=createHash('sha256').update('import-global:'+Math.floor(Date.now()/1000/900)).digest('hex');
+  await db.prepare('UPDATE auth_limits SET count=100 WHERE key=?').bind(key).run();
+  const other=await call({action:'register',username:'second-import',name:'Other',password:pass});
+  assert.equal((await call({url:'https://example.com'},other.cookie,'/api/import')).status,429);
  });
  await t.test('persistent account rate limit works across different IPs',async()=>{
   for(let i=0;i<12;i++)assert.equal((await call({action:'login',username:'rate-test',password:'wrong'})).status,401);

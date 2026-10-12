@@ -1,3 +1,5 @@
+import {env} from 'cloudflare:workers';
+import {authorizeImport} from '../../../lib/auth/service.mjs';
 import { importPage, ImportError } from "../../../lib/toolkit/importer.mjs";
 const headers = {"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
 export async function POST(request: Request) {
@@ -5,6 +7,7 @@ export async function POST(request: Request) {
     return Response.json({error:"Use this importer from the toolkit.",code:"ORIGIN_REQUIRED"},{status:403,headers});
   if(!(request.headers.get("content-type")||"").startsWith("application/json"))
     return Response.json({error:"Use JSON input."},{status:415,headers});
+  const denied=await authorizeImport(request,env.DB);if(denied)return denied;
   try {
     const reader=request.body?.getReader();if(!reader)throw new Error("Missing input");
     const chunks:Uint8Array[]=[];let size=0;

@@ -51,6 +51,12 @@ export default defineConfig(async ({ command }) => {
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
+  if(process.env.TOOLKIT_DEPLOY_TARGET==='cloudflare')return {
+    plugins:[vinext(),cloudflare({viteEnvironment:{name:'rsc',childEnvironments:['ssr']},inspectorPort:false,config:{
+      name:'professional-toolkit',main:'./deployment/cloudflare-worker.ts',compatibility_date:'2026-10-12',compatibility_flags:['nodejs_compat'],
+      d1_databases:[{binding:'DB',database_name:'professional-toolkit',database_id:process.env.TOOLKIT_DATABASE_ID||SITE_CREATOR_PLACEHOLDER_DATABASE_ID}]
+    }})]
+  };
   return {
     server: {
       ...(managedLinux

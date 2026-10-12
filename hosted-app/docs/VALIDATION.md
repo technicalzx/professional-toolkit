@@ -14,3 +14,13 @@ No browser automation tool was available, so rendered layout, keyboard interacti
 - `node /root/.codex/plugins/cache/openai-curated-remote/sites/1.0.1/scripts/build-site.mjs`: production build passed. Routes `/`, `/account`, `/api/account`, `/api/import`, `/api/reports` generated.
 - Generated migration reviewed: five tables with ownership foreign keys, cascading deletes, username uniqueness and lookup/expiry indexes. Migration is schema-only.
 - Browser interaction/visual QA was unavailable in this environment. No claim of a manual browser pass, load test, penetration test, backup restore or independent security audit.
+
+## Direct Cloudflare target preparation — 2026-10-13
+
+- Direct Vinext/Cloudflare production build: passed, with a plain Worker entrypoint.
+- TypeScript check: passed.
+- Regression suite: 27 tests passed, 0 failed. Added Worker/D1 tests for import session requirement, per-user exhaustion and global exhaustion.
+- Local password-hash CPU experiment: 211/204/201 ms; not a production Cloudflare measurement.
+- Customer deployment remains blocked on verified Free-plan/CPU compatibility. Review deployment was not changed.
+
+- Wrangler deployment dry run passed: 42 modules, 26 static files, 809.77 KiB upload (237.09 KiB gzip). This validates packaging only, not production CPU or live operation.
