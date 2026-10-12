@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1791812213040,
+      "tag": "0000_swift_wendigo",
+      "breakpoints": true
+    }
+  ]
 }

@@ -24,7 +24,7 @@ Remaining hardening before broader public access: authenticated user quotas and 
 
 ## Phase 2 — accounts, projects and reliable persistence
 
-Add supported identity, secure sessions, user-isolated SQL storage and private file storage. Suggested managed deployment: Sites identity plus D1/R2; keep repository interfaces portable to PostgreSQL/object storage.
+First-party username/passphrase accounts, revocable sessions, one-use recovery codes and user-isolated saved reports are delivered in v0.3. See AUTHENTICATION.md for procedures, security design and remaining maturity gates. No external authentication provider is used. Private files, project revisions and portable database adapters remain planned.
 
 Tables: users; projects(owner_id); sources(owner_id, project_id, URL, provenance, fetched_at, hash); analyses(owner_id, source_id, tool_version, input_hash, result_json); drafts(owner_id, analysis_id, version); favorites(owner_id, tool_id); consents(owner_id, purpose, provider, version); integration_connections(owner_id, provider, encrypted_secret_reference, scope, expiry); exports(owner_id, private_object_key, expires_at).
 

@@ -1,3 +1,7 @@
+## v0.3 — first-party authentication
+
+Open `/account` for registration, sign-in, recovery, password and session controls. Reports can now be explicitly saved to a private account across devices. No external authentication provider is required. Read [user and operator procedures](docs/AUTHENTICATION.md). The hosted review remains owner-private.
+
 # Professional Toolkit 0.2
 
 A React/TypeScript professional workspace with a Cloudflare Worker URL importer.
