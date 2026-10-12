@@ -1,0 +1,1 @@
+Validation on 12 October 2026: 6 unit tests passed; JavaScript syntax check passed; HTTP homepage and health passed; percentage API valid-input test passed; invalid denominator returned HTTP 400. Browser rendering, responsiveness, clipboard/download interaction, accessibility, cross-browser tests and production deployment were not tested. This is a local development milestone.
