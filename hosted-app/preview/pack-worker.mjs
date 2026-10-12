@@ -1,0 +1,21 @@
+import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {join,extname} from 'node:path';
+const root='preview-dist',assets={};
+function visit(dir){for(const file of readdirSync(dir,{withFileTypes:true})){const p=join(dir,file.name);if(file.isDirectory())visit(p);else{const body=readFileSync(p,'utf8');assets['/'+p.slice(root.length+1)]={body,type:({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'})[extname(p)]||'text/plain',etag:'"'+createHash('sha256').update(body).digest('hex')+'"'};}}}visit(root);
+const code=`const assets=${JSON.stringify(assets)};
+export default {fetch(request){
+const path=new URL(request.url).pathname;
+const headers={'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"};
+if(path==='/api/health')return Response.json({status:'ok',mode:'temporary-preview',accounts:false,urlImport:false},{headers:{...headers,'Cache-Control':'no-store'}});
+if(path==='/api/account'&&request.method==='GET')return Response.json({user:null},{headers:{...headers,'Cache-Control':'no-store'}});
+if(path.startsWith('/api/'))return Response.json({error:'This feature is not enabled in the temporary preview.'},{status:503,headers:{...headers,'Cache-Control':'no-store'}});
+if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed',{status:405,headers:{...headers,Allow:'GET, HEAD'}});
+const asset=assets[path==='/'||path==='/account'?'/index.html':path];
+if(!asset)return new Response('Not found',{status:404,headers});
+const h={...headers,'Content-Type':asset.type,ETag:asset.etag,'Cache-Control':path.startsWith('/assets/')?'public,max-age=31536000,immutable':'no-cache'};
+if(request.headers.get('if-none-match')===asset.etag)return new Response(null,{status:304,headers:h});
+return new Response(request.method==='HEAD'?null:asset.body,{headers:h});
+}};`;
+writeFileSync('preview-dist/_worker.js',code);
+console.log(JSON.stringify({files:Object.keys(assets).length,workerBytes:Buffer.byteLength(code)}));

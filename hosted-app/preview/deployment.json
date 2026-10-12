@@ -1,0 +1,13 @@
+{
+  "project": "professional-toolkit-test",
+  "project_id": "383ec0cb-2006-41ff-9491-e9ecfd4edccc",
+  "deployment_id": "e074d272-c9b6-41bb-9eda-34215b3eb87f",
+  "url": "https://professional-toolkit-test.pages.dev",
+  "deployment_url": "https://e074d272.professional-toolkit-test.pages.dev",
+  "status": "success",
+  "confirmed_at": "2026-10-12T20:08:36.616352Z",
+  "mode": "temporary-public-preview",
+  "accounts": false,
+  "url_import": false,
+  "manual_browser_test": false
+}
