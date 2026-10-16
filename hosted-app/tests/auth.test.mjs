@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
+import {comparePlans,restorePlan} from '../lib/toolkit/planner.mjs';
+import {examplePlan} from '../lib/toolkit/workspace-catalog.mjs';
 const require=createRequire(import.meta.url),wr=createRequire(require.resolve('wrangler/package.json'));
 const {Miniflare}=wr('miniflare');
 const pass='a unique long passphrase 2026';
@@ -49,6 +51,19 @@ test('first-party authentication and private reports in the Worker/D1 runtime',a
   await call({id:saved.body.id},bob.cookie,'/api/reports','DELETE');
   assert.equal((await call(null,alice.cookie,'/api/reports')).body.reports.length,1);
   assert.equal((await call({report:{title:'Large',kind:'audit',text:'x'.repeat(70000)}},alice.cookie,'/api/reports')).status,413);
+ });
+ await t.test('workflow snapshots round-trip privately and reopen from inputs',async()=>{
+  const input=examplePlan('student');
+  const report={title:input.title,kind:'workflow-plan',tool:'workflow',input,result:comparePlans(input,25)};
+  const saved=await call({report},alice.cookie,'/api/reports');assert.equal(saved.status,201);
+  const aliceReports=(await call(null,alice.cookie,'/api/reports')).body.reports;
+  const snapshot=aliceReports.find(r=>r.cloudId===saved.body.id);assert.ok(snapshot);
+  assert.equal(restorePlan(snapshot).result.baseline.totalHours,18);
+  assert.ok(!(await call(null,bob.cookie,'/api/reports')).body.reports.some(r=>r.cloudId===saved.body.id));
+  await call({id:saved.body.id},bob.cookie,'/api/reports','DELETE');
+  assert.ok((await call(null,alice.cookie,'/api/reports')).body.reports.some(r=>r.cloudId===saved.body.id));
+  await call({id:saved.body.id},alice.cookie,'/api/reports','DELETE');
+  assert.ok(!(await call(null,alice.cookie,'/api/reports')).body.reports.some(r=>r.cloudId===saved.body.id));
  });
  await t.test('revokes all sessions on password change',async()=>{
   assert.equal((await call({action:'password',currentPassword:'wrong',password:pass+'new'},alice.cookie)).status,401);
