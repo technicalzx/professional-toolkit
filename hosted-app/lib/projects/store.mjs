@@ -1,5 +1,6 @@
 import { currentUser, readJson } from "../auth/service.mjs";
 import { validateProject } from "./engine.mjs";
+import { normalizeProjectBaseline } from "./workspace-evidence.mjs";
 import { createHash } from "node:crypto";
 
 const KIND = "project-workspace";
@@ -62,9 +63,10 @@ function document(content) {
     value.revision < 1
   )
     throw Error("Invalid stored project.");
+  const project = validateProject(value.project);
   return {
-    project: validateProject(value.project),
-    baseline: value.baseline === null ? null : validateProject(value.baseline),
+    project,
+    baseline: normalizeProjectBaseline(project, value.baseline),
     revision: value.revision,
   };
 }
@@ -132,7 +134,7 @@ export async function projectStore(request, db) {
     let project, baseline;
     try {
       project = validateProject(data.project);
-      baseline = data.baseline == null ? null : validateProject(data.baseline);
+      baseline = normalizeProjectBaseline(project, data.baseline);
       if (
         baseline &&
         (baseline.id !== project.id || baseline.audience !== project.audience)
@@ -164,8 +166,23 @@ export async function projectStore(request, db) {
       KIND,
     ).first();
     if (previous) {
-      if (document(previous.content).revision !== data.baseRevision)
-        return conflict();
+      const saved = document(previous.content);
+      if (saved.revision !== data.baseRevision) return conflict();
+      if (
+        !Object.hasOwn(data.project, "sources") &&
+        (saved.project.sources.length ||
+          [...saved.project.requirements, ...saved.project.deliverables].some(
+            (record) => record.evidenceLinks.length,
+          ))
+      )
+        return reply(
+          {
+            error:
+              "This project contains source evidence. Refresh the application before saving so an older client cannot discard it.",
+            code: "PROJECT_CLIENT_OUTDATED",
+          },
+          409,
+        );
       const updated = await statement(
         db,
         `UPDATE reports SET content=?,created=? WHERE id=? AND user_id=? AND content=? AND ${activeSession}`,

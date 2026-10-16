@@ -1,4 +1,14 @@
 import { buildPlan, validatePlan } from "../toolkit/planner.mjs";
+import {
+  canonicalSourceSnapshot,
+  validateProjectSources,
+  validateEvidenceLinks,
+  inspectEvidence,
+  evidenceTimestamp,
+  MAX_PROJECT_SOURCES,
+  MAX_EVIDENCE_LINKS,
+  MAX_EVIDENCE_QUOTE,
+} from "./evidence.mjs";
 
 /** Portable project records. Extraction and planning are explicit deterministic rules, not AI. */
 export const PROJECT_SCHEMA_VERSION = 1;
@@ -307,7 +317,9 @@ export function proposeBriefRevision(
   });
 }
 
-/** Normalize allowed fields; reject bad references, impossible states and unbounded imports. */
+/** Normalize allowed fields; reject bad references, impossible states and unbounded imports.
+ * @returns {import('./types').Project}
+ */
 export function validateProject(input) {
   record(input, "Project");
   if (
@@ -328,6 +340,7 @@ export function validateProject(input) {
     currency: text(input.currency, "Currency", 3),
     createdAt: timestamp(input.createdAt, "Created time"),
     updatedAt: timestamp(input.updatedAt, "Updated time"),
+    sources: validateProjectSources(input.sources),
   };
   if (!/^[A-Z]{3}$/.test(project.currency))
     fail("Currency must use three uppercase letters.");
@@ -345,6 +358,7 @@ export function validateProject(input) {
           2000,
         ),
         evidenceNote: text(value.evidenceNote, "Evidence note", 2000, true),
+        evidenceLinks: validateEvidenceLinks(value.evidenceLinks),
         status: choice(value.status, requirementStatuses, "Requirement status"),
         sourceLine: number(
           value.sourceLine,
@@ -385,6 +399,7 @@ export function validateProject(input) {
           2000,
           true,
         ),
+        evidenceLinks: validateEvidenceLinks(value.evidenceLinks),
       };
       if (!result.requirementIds.length)
         fail("Link every deliverable to at least one requirement.");
@@ -425,6 +440,7 @@ export function validateProject(input) {
       ...requirementIds,
       ...deliverableIds,
       ...project.tasks.map((value) => value.id),
+      ...project.sources.map((value) => value.id),
     ],
     "Project record IDs",
   );
@@ -624,6 +640,169 @@ export function compareScope(baselineInput, revisedInput) {
   };
 }
 
+function evidenceTarget(project, target) {
+  record(target, "Evidence target");
+  choice(target.type, ["requirement", "deliverable"], "Evidence target type");
+  const values =
+    target.type === "requirement" ? project.requirements : project.deliverables;
+  const result = values.find((value) => value.id === target.id);
+  if (!result)
+    fail(
+      "Choose an existing requirement or deliverable for this evidence link.",
+    );
+  return result;
+}
+
+function evidenceUpdated(project, now) {
+  project.updatedAt = evidenceMutationTime(project, now);
+  return validateProject(project);
+}
+
+function evidenceMutationTime(project, now) {
+  evidenceTimestamp(now);
+  return new Date(
+    Math.max(
+      Date.parse(now),
+      Date.parse(project.updatedAt),
+      Date.parse(project.createdAt),
+    ),
+  ).toISOString();
+}
+
+/** Add a user-controlled snapshot, not a live connection or verified profile. */
+export function addProjectSource(
+  input,
+  snapshotOrCapturedReview,
+  now = new Date().toISOString(),
+) {
+  const project = validateProject(input);
+  const snapshot = canonicalSourceSnapshot(snapshotOrCapturedReview);
+  if (
+    project.sources.some(
+      (source) => JSON.stringify(source.snapshot) === JSON.stringify(snapshot),
+    )
+  )
+    return project;
+  if (project.sources.length >= MAX_PROJECT_SOURCES)
+    fail(`A project supports at most ${MAX_PROJECT_SOURCES} sources.`);
+  const reserved = new Set(
+    [
+      ...project.sources,
+      ...project.requirements,
+      ...project.deliverables,
+      ...project.tasks,
+    ].map((value) => value.id),
+  );
+  let sourceId;
+  do {
+    sourceId = `s-${globalThis.crypto.randomUUID()}`;
+  } while (reserved.has(sourceId));
+  project.sources.push({
+    id: sourceId,
+    revision: 1,
+    snapshot,
+    importedAt: evidenceMutationTime(project, now),
+  });
+  return evidenceUpdated(project, now);
+}
+
+function scrubSourceQuotes(project, sourceId) {
+  for (const target of [...project.requirements, ...project.deliverables])
+    for (const link of target.evidenceLinks)
+      if (link.sourceId === sourceId) link.quote = "";
+}
+
+/** Replace content and discard cached quotes even if the text remains present. Re-link after review. */
+export function reviseProjectSource(
+  input,
+  sourceId,
+  snapshot,
+  now = new Date().toISOString(),
+) {
+  const project = validateProject(input);
+  const source = project.sources.find((source) => source.id === sourceId);
+  if (!source) fail("Choose an existing project source to revise.");
+  if (source.revision === Number.MAX_SAFE_INTEGER)
+    fail("Source revision limit reached; remove this source and add it again.");
+  source.snapshot = canonicalSourceSnapshot(snapshot);
+  source.revision += 1;
+  source.importedAt = evidenceMutationTime(project, now);
+  scrubSourceQuotes(project, sourceId);
+  return evidenceUpdated(project, now);
+}
+
+/** Keep bounded tombstone IDs so users see broken links without retaining removed quote text. */
+export function removeProjectSource(
+  input,
+  sourceId,
+  now = new Date().toISOString(),
+) {
+  const project = validateProject(input);
+  if (!project.sources.some((source) => source.id === sourceId))
+    fail("Choose an existing project source to remove.");
+  project.sources = project.sources.filter((source) => source.id !== sourceId);
+  scrubSourceQuotes(project, sourceId);
+  return evidenceUpdated(project, now);
+}
+
+export function linkProjectEvidence(
+  input,
+  target,
+  sourceId,
+  quote,
+  now = new Date().toISOString(),
+) {
+  const project = validateProject(input),
+    destination = evidenceTarget(project, target);
+  const source = project.sources.find((source) => source.id === sourceId);
+  if (!source) fail("Choose an existing project source.");
+  if (
+    typeof quote !== "string" ||
+    !quote.trim() ||
+    quote.length > MAX_EVIDENCE_QUOTE ||
+    !source.snapshot.text.includes(quote)
+  )
+    fail(
+      `Choose an exact, nonempty source excerpt of at most ${MAX_EVIDENCE_QUOTE} characters.`,
+    );
+  const link = { sourceId: source.id, sourceRevision: source.revision, quote };
+  if (
+    destination.evidenceLinks.some(
+      (value) => JSON.stringify(value) === JSON.stringify(link),
+    )
+  )
+    return project;
+  if (destination.evidenceLinks.length >= MAX_EVIDENCE_LINKS)
+    fail(
+      `Each requirement or deliverable supports at most ${MAX_EVIDENCE_LINKS} evidence links.`,
+    );
+  destination.evidenceLinks.push(link);
+  return evidenceUpdated(project, now);
+}
+
+export function unlinkProjectEvidence(
+  input,
+  target,
+  index,
+  now = new Date().toISOString(),
+) {
+  const project = validateProject(input),
+    destination = evidenceTarget(project, target);
+  number(
+    index,
+    "Evidence link index",
+    0,
+    destination.evidenceLinks.length - 1,
+    true,
+  );
+  destination.evidenceLinks.splice(index, 1);
+  return evidenceUpdated(project, now);
+}
+
+export function inspectProjectEvidence(input) {
+  return inspectEvidence(validateProject(input));
+}
+
 export function serializeProject(project) {
   return JSON.stringify(validateProject(project), null, 2);
 }
@@ -657,6 +836,7 @@ export function exportProjectMarkdown(input, format = "handover") {
   choice(format, ["handover", "client", "portfolio"], "Export format");
   const project = validateProject(input),
     plan = buildProjectPlan(project);
+  const evidence = inspectEvidence(project);
   const labels = {
     handover: "Project handover",
     client: "Client scope and delivery review",
@@ -686,6 +866,25 @@ export function exportProjectMarkdown(input, format = "handover") {
         `- ${md(value.title)} [${value.status}]; requirements: ${value.requirementIds.join(", ")}; ${value.evidenceNote ? `user evidence: ${md(value.evidenceNote)}` : "evidence missing"}.`,
     ),
     "",
+    "## Linked source excerpts and provenance",
+    "",
+    "These are literal excerpts from user-selected snapshots. A matching excerpt establishes text correspondence, not ownership, truth, client approval or skill verification. Review publication rights and private details before sharing.",
+    "",
+    ...(evidence.length
+      ? evidence.flatMap((link) =>
+          link.status === "linked"
+            ? [
+                `### ${md(link.targetType)} ${md(link.targetId)} · source ${md(link.sourceId)} revision ${link.sourceRevision}`,
+                `Source title: ${md(link.title)}. Locator: ${md(link.sourceUrl)}. Captured: ${md(link.capturedAt)}. Method: ${md(link.captureMethod)}.`,
+                `Selected excerpt: ${md(link.quote)}`,
+                "",
+              ]
+            : [
+                `- Evidence warning: ${md(link.targetType)} ${md(link.targetId)} link ${link.linkIndex + 1} is ${link.status} (source ${md(link.sourceId)}, pinned revision ${link.sourceRevision}). No excerpt is included; review or remove this link.`,
+                "",
+              ],
+        )
+      : ["No source excerpts are linked to this project.", ""]),
     "## Plan and estimates",
     "",
     `Total scope: ${plan.totalHours} hours. Remaining task effort: ${plan.remainingHours} hours. Capacity: ${plan.capacityHours} hours. Overflow: ${plan.overflowHours} hours.`,
