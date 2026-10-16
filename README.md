@@ -50,3 +50,7 @@ npm run build
 ```
 
 Use Node 24 and pnpm 11.25.0, matching the package manager recorded in the hosted app. Keep local runtime state, private records and credentials out of Git. GitHub Actions checks the starter tests, hosted behavior, types and production build on pull requests. A passing source build does not establish a production security or hosting-capacity review.
+
+See the [dependency security review](hosted-app/docs/DEPENDENCY-SECURITY.md) for the
+patched framework versions and the remaining upstream advisory in development
+tooling. CI also checks production dependencies for high/critical advisories.

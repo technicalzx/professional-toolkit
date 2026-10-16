@@ -24,3 +24,17 @@ No browser automation tool was available, so rendered layout, keyboard interacti
 - Customer deployment remains blocked on verified Free-plan/CPU compatibility. Review deployment was not changed.
 
 - Wrangler deployment dry run passed: 42 modules, 26 static files, 809.77 KiB upload (237.09 KiB gzip). This validates packaging only, not production CPU or live operation.
+
+## Organization publication dependency review — 2026-10-16
+
+- Patched Next.js, React/server DOM, Vite and vulnerable transitive dependencies;
+  see [the dependency assessment](DEPENDENCY-SECURITY.md).
+- Production dependency audit: no known vulnerabilities. The full audit retains
+  one unpatched high advisory in development-only `braces`; it is not suppressed.
+- Local TypeScript check, production framework build, six Python starter tests
+  and fourteen pure Node behavior tests passed.
+- The Miniflare authentication and extraction suites aborted in native Node
+  24.19.0 on Windows with `InternalCallbackScope::Close` / `execution_async_id`.
+  No Windows Worker-test pass is claimed. GitHub's Linux contributor workflow
+  runs the complete Worker/D1 suites, type check, production audit and build;
+  inspect the exact publication commit's Actions result before merging.

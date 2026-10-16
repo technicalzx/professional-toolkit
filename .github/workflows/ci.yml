@@ -23,6 +23,8 @@ jobs:
       - run: npm install --global pnpm@11.25.0 --ignore-scripts
       - run: pnpm install --frozen-lockfile --ignore-scripts
         working-directory: hosted-app
+      - run: pnpm audit --prod --audit-level=high
+        working-directory: hosted-app
       - run: node --test tests/toolkit.test.mjs tests/extraction.test.mjs tests/auth.test.mjs
         working-directory: hosted-app
       - run: node node_modules/typescript/bin/tsc --noEmit
