@@ -2,7 +2,7 @@
 
 **Current review release: v0.2.** The upgraded React/TypeScript application and URL importer are in [hosted-app](hosted-app/). See the [upgrade roadmap](hosted-app/docs/UPGRADE_PLAN.md) and [validation record](hosted-app/docs/VALIDATION.md).
 
-Review site: https://professional-toolkit-review.honestcove32.chatgpt.site (owner-private).
+The hosted review site is owner-private. Run the source locally using the contributor instructions below.
 
 The root Python app below is retained as the original local starter. The hosted application is the current review experience.
 
@@ -32,7 +32,7 @@ See docs/BLUEPRINT.md. Contributors should implement small complete tools and re
 
 ## Repository
 
-Source: https://github.com/ycgiio/professional-toolkit
+Source: https://github.com/AbiHurairah-OpenSource/professional-toolkit
 
 Licensed under the [MIT License](LICENSE). Dependencies and bundled third-party code retain their own licenses and notices. Contributions are welcome through reviewed pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md), [community expectations](CODE_OF_CONDUCT.md), and [security reporting](SECURITY.md).
 

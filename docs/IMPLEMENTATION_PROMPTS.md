@@ -2,7 +2,7 @@
 Updated 13 October 2026. Use with a coding agent that can access the repository, or paste the research prompt into Claude/Kimi yourself. These prompts do not grant paid-service permission.
 
 ## Implementation prompt
-You are implementing ycgiio/professional-toolkit, an open-source platform for students and professionals. Read the current repository, applicable AGENTS.md, contribution instructions, hosted-app/docs/AUTHENTICATION.md and docs/CLOUDFLARE_FREE_PLAN.md. Work from the current source commit and protect concurrent user edits.
+You are implementing AbiHurairah-OpenSource/professional-toolkit, an open-source platform for students and professionals. Read the current repository, applicable AGENTS.md, contribution instructions, hosted-app/docs/AUTHENTICATION.md and docs/CLOUDFLARE_FREE_PLAN.md. Work from the current source commit and protect concurrent user edits.
 
 The owner requires first-party authentication and free-only infrastructure. The current review app uses React/TypeScript/Vinext, Workers and D1, with scrypt password hashes, opaque HttpOnly sessions, recovery codes and private reports. Do not replace this with an external authentication provider. Do not weaken password hashing to fit a free hosting limit.
 
