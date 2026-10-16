@@ -1,9 +1,11 @@
-# Security
+# Security and vulnerability reporting
 
-This is a local development application. The server binds to 127.0.0.1. It has no login or production user isolation. Browser saved data is plaintext and accessible to others using that browser profile.
+The root Python server is a loopback development starter without account authentication; its browser storage is plaintext. Keep it on 127.0.0.1 and do not expose it as a production service.
 
-Do not expose the server on a public interface or deploy it as a production SaaS. Do not submit client secrets or sensitive account data. Delete browser data using the app control after using a shared device.
+The newer hosted-app has first-party accounts, sessions, one-use recovery and owner-scoped reports. See hosted-app/docs/AUTHENTICATION.md for the implemented controls and remaining maturity gates. Public page importing has bounded inputs and destination checks, but controlled/pinned egress and a production security review remain necessary. The owner-private review hosting boundary must not be widened merely because the source becomes public.
 
-Before production, implement authentication, authorization, CSRF protection, strict CSP, rate limits, upload isolation, secure secret storage, encrypted durable storage where appropriate, privacy consent and tested deletion/export.
+Do not submit credentials, sensitive client information or private targets to this preview. Keep .env files, local databases and runtime state outside Git. Source visibility and a passing CI suite do not certify operational security.
 
-Report suspected vulnerabilities privately to the repository owner; do not disclose credentials in public issues.
+Report a suspected vulnerability privately using GitHub's private vulnerability reporting feature when the repository owner has enabled it. Otherwise establish a verified private channel with the maintainer before sending sensitive details. No monitored email address or response-time guarantee is claimed. Do not open a public issue containing exploit details, credentials or personal data.
+
+For a fix, use an isolated synthetic reproduction; verify legitimate behavior and unauthorized/invalid requests. Document affected versions, data impact, mitigation and remaining limitations. Production release additionally requires reviewed authentication, abuse controls, egress, backup restoration, secret management, monitoring and account export/deletion coverage.
