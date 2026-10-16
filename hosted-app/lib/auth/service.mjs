@@ -139,18 +139,22 @@ export async function reportStore(request,db){
   if(!db)fail('Account storage is temporarily unavailable.',503);
   const user=await currentUser(request,db);if(!user)fail('Sign in to save reports across devices.',401);
   if(request.method==='GET'){
-   const rows=await stmt(db,'SELECT id,content,created FROM reports WHERE user_id=? ORDER BY created DESC',user.id).all();
+   const rows=await stmt(db,"SELECT id,content,created FROM reports WHERE user_id=? AND COALESCE(json_extract(content,'$.kind'),'')<>? ORDER BY created DESC",user.id,'project-workspace').all();
    return json({reports:rows.results.map(r=>({...JSON.parse(r.content),cloudId:r.id,savedAt:r.created}))});
   }
   if(!['POST','DELETE'].includes(request.method))fail('Method not allowed.',405);
   const data=await readJson(request,65536);await rate(db,`reports:${user.id}`,100);
   if(request.method==='DELETE'){
-   if(typeof data.id!=='string')fail('Choose a report.');await stmt(db,'DELETE FROM reports WHERE id=? AND user_id=?',data.id,user.id).run();return json({ok:true});
+   if(typeof data.id!=='string')fail('Choose a report.');
+   const managed=await stmt(db,"SELECT id FROM reports WHERE id=? AND user_id=? AND json_extract(content,'$.kind')=?",data.id,user.id,'project-workspace').first();
+   if(managed)fail('Delete this project from the project workspace so its current revision can be checked.',409);
+   await stmt(db,"DELETE FROM reports WHERE id=? AND user_id=? AND COALESCE(json_extract(content,'$.kind'),'')<>?",data.id,user.id,'project-workspace').run();return json({ok:true});
   }
   const value=data.report;
   if(!value||typeof value!=='object'||Array.isArray(value)||typeof value.title!=='string'||value.title.length>200||typeof value.kind!=='string')fail('Invalid report.');
+  if(value.kind==='project-workspace')fail('Save projects through the project workspace so validation and revision checks are applied.');
   const id=crypto.randomUUID(),content=JSON.stringify(value);
-  const r=await stmt(db,'INSERT INTO reports (id,user_id,content,created) SELECT ?,?,?,? WHERE (SELECT count(*) FROM reports WHERE user_id=?)<50',id,user.id,content,now(),user.id).run();
+  const r=await stmt(db,"INSERT INTO reports (id,user_id,content,created) SELECT ?,?,?,? WHERE (SELECT count(*) FROM reports WHERE user_id=? AND COALESCE(json_extract(content,'$.kind'),'')<>?)<50",id,user.id,content,now(),user.id,'project-workspace').run();
   if(!r.meta.changes)fail('Your account holds 50 reports. Export and delete an old report first.',409);
   return json({id},201);
  }catch(e){if(e instanceof AuthError)return json({error:e.message},e.status);console.error('report_operation_failed');return json({error:'Report storage unavailable. Please try again.'},503)}

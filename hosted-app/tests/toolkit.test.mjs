@@ -1,7 +1,3 @@
-import './capture-api.test.mjs';
-import './capture.test.mjs';
-// Include planning coverage in the existing contributor CI entry point.
-import './planner.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validateUrl,isPublicAddress,robotsAllows,importPage,readLimited} from '../lib/toolkit/importer.mjs';

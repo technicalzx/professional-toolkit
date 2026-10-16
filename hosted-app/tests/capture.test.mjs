@@ -8,8 +8,8 @@ test('snapshot strips URL tracking, unknown properties and forged platform label
  const value=validateSnapshot({...captureFixture(),cookies:'do not retain',platform:'fiverr'});
  assert.equal(value.sourceUrl,'https://www.linkedin.com/in/test-fixture');assert.equal(value.platform,'linkedin');assert.equal('cookies' in value,false);
 });
-test('all five supplied profile locator shapes support snapshots without fetches',()=>{
- for(const sourceUrl of ['https://www.linkedin.com/in/abihurairah','https://www.fiverr.com/abihurairah','https://www.fiverr.com/ashwinikmr','https://www.upwork.com/freelancers/abihurairah','https://www.upwork.com/freelancers/anupam'])assert.ok(validateSnapshot({...captureFixture(),sourceUrl}).platform!=='website');
+test('synthetic owner and competitor profile locator shapes support snapshots without fetches',()=>{
+ for(const sourceUrl of ['https://www.linkedin.com/in/test-owner','https://www.fiverr.com/test-owner','https://www.fiverr.com/test-competitor','https://www.upwork.com/freelancers/test-owner','https://www.upwork.com/freelancers/test-competitor'])assert.ok(validateSnapshot({...captureFixture(),sourceUrl}).platform!=='website');
 });
 test('snapshot rejects unsafe URLs, unknown schemas and malformed fields',()=>{
  for(const sourceUrl of ['javascript:alert(1)','http://example.com','https://user:password@example.com','https://127.0.0.1','https://example.com:8080'])assert.throws(()=>validateSnapshot({...captureFixture(),sourceUrl}));

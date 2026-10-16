@@ -5,7 +5,7 @@ This implements the source-snapshot alternative from the research report. On the
 ## User workflow
 
 1. Open `/capture` and follow **Install and connect the Chrome extension**. The downloadable ZIP is served at `/toolkit-capture-extension.zip`.
-2. Sign in on the toolkit, then connect the extension to that exact website origin. Platform sign-in stays on the platform and toolkit sign-in stays on the toolkit.
+2. Set the toolkit origin in the extension. Guest transfer and local review work without a toolkit account. For private saving and title sync, sign in on a backend-enabled toolkit deployment and optionally connect the account. Platform sign-in stays on the platform and toolkit sign-in stays on the toolkit.
 3. Open the chosen source profile/page and expand the relevant sections. Click Capture, inspect/redact the preview, add a request and confirm the transfer.
 4. Inspect the received source in the website. Local review provides transparent text checks and a literal excerpt lookup for the request. AI review provides an open-ended answer only when configured and explicitly consented to.
 5. Save privately to the account, export the snapshot/review, or clear the page. Saved reports open `/capture?report=...`; the extension can sync their titles and reopen them. No automatic saving or provider invocation follows a browser message.

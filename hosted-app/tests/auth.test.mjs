@@ -65,6 +65,27 @@ test('first-party authentication and private reports in the Worker/D1 runtime',a
   await call({id:saved.body.id},alice.cookie,'/api/reports','DELETE');
   assert.ok(!(await call(null,alice.cookie,'/api/reports')).body.reports.some(r=>r.cloudId===saved.body.id));
  });
+ await t.test('generic reports cannot list, forge or delete managed projects, and quotas remain separate',async()=>{
+  const managedId=crypto.randomUUID(),fixtureIds=Array.from({length:48},()=>crypto.randomUUID());
+  let addedReport;
+  try{
+   await db.prepare('INSERT INTO reports (id,user_id,content,created) VALUES (?,?,?,?)').bind(managedId,alice.body.user.id,JSON.stringify({kind:'project-workspace',revision:1,project:{id:managedId,title:'Protected synthetic project'},baseline:null}),1).run();
+   const listing=(await call(null,alice.cookie,'/api/reports')).body.reports;
+   assert.equal(listing.some(r=>r.cloudId===managedId),false);
+   assert.equal((await call({report:{title:'Forged document',kind:'project-workspace',project:{id:managedId},revision:999}},alice.cookie,'/api/reports')).status,400);
+   assert.equal((await call({id:managedId},alice.cookie,'/api/reports','DELETE')).status,409);
+   assert.equal((await call({id:managedId},bob.cookie,'/api/reports','DELETE')).status,200);
+   assert.equal(JSON.parse((await db.prepare('SELECT content FROM reports WHERE id=?').bind(managedId).first()).content).revision,1);
+   // Alice already owns one ordinary report. Projects must not consume its remaining 49 slots.
+   await db.batch(fixtureIds.map(id=>db.prepare('INSERT INTO reports (id,user_id,content,created) VALUES (?,?,?,?)').bind(id,alice.body.user.id,JSON.stringify({kind:'audit',title:'Synthetic quota fixture'}),1)));
+   const saved=await call({report:{title:'Final ordinary report slot',kind:'audit'}},alice.cookie,'/api/reports');
+   assert.equal(saved.status,201);addedReport=saved.body.id;
+   assert.equal((await call(null,alice.cookie,'/api/reports')).body.reports.length,50);
+   assert.equal((await call({report:{title:'Beyond ordinary report quota',kind:'audit'}},alice.cookie,'/api/reports')).status,409);
+  }finally{
+   await db.batch([managedId,...fixtureIds,...(addedReport?[addedReport]:[])].map(id=>db.prepare('DELETE FROM reports WHERE id=? AND user_id=?').bind(id,alice.body.user.id)));
+  }
+ });
  await t.test('revokes all sessions on password change',async()=>{
   assert.equal((await call({action:'password',currentPassword:'wrong',password:pass+'new'},alice.cookie)).status,401);
   assert.equal((await call({action:'password',currentPassword:pass,password:pass+'new'},alice.cookie)).status,200);
