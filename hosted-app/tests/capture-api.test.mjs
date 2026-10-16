@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {createRequire} from 'node:module';
+const captureRequire=createRequire(import.meta.url),wranglerRequire=createRequire(captureRequire.resolve('wrangler/package.json'));
+const {Miniflare}=wranglerRequire('miniflare');
+test('capture API enforces consent, account ownership, grounded output and quotas',async()=>{
+ const root=new URL('../',import.meta.url);
+ const source=path=>fs.readFileSync(new URL(path,root),'utf8');
+ const entry=`import {account,reportStore} from './lib/auth/service.mjs';
+ import {reviewCapture} from './lib/capture/service.mjs';
+ let calls=0;
+ const ai={async run(model,input){calls++;const request=JSON.parse(input.messages[1].content).request;if(request==='provider-error')throw Error('private provider details');if(request==='invalid-json')return {response:'not JSON'};return {response:JSON.stringify({summary:'Synthetic fixture review',findings:[{quote:request==='bad-quotes'?'invented quote':'I help clients build reliable cloud systems.',observation:'A service statement is present.',recommendation:'Add a specific audience.'}],missingInformation:['Project evidence.']})};}};
+ export default {fetch(r,e){const p=new URL(r.url).pathname;if(p==='/calls')return Response.json({calls});if(p==='/api/account')return account(r,e.DB);if(p==='/api/reports')return reportStore(r,e.DB);return reviewCapture(r,e.DB,p==='/unconfigured'?null:ai,'test-model');}};`;
+ const mf=new Miniflare({modules:[{type:'ESModule',path:'index.mjs',contents:entry},...['lib/auth/service.mjs','lib/capture/snapshot.mjs','lib/capture/service.mjs'].map(path=>({type:'ESModule',path,contents:source(path)}))],compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']});
+ try{
+ const db=await mf.getD1Database('DB');for(const q of source('drizzle/0000_swift_wendigo.sql').split('--> statement-breakpoint').map(x=>x.trim()).filter(Boolean))await db.prepare(q).run();
+ const call=async(path,data,cookie='',origin='https://toolkit.test')=>{const r=await mf.dispatchFetch('https://toolkit.test'+path,{method:data?'POST':'GET',headers:{origin,'content-type':'application/json',cookie},...(data?{body:JSON.stringify(data)}:{})});return {status:r.status,body:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]};};
+ const snapshot={schemaVersion:1,title:'Synthetic profile',sourceUrl:'https://www.upwork.com/freelancers/test-fixture',captureMethod:'browser-capture',capturedAt:'2026-10-16T08:00:00.000Z',headings:[],text:'I help clients build reliable cloud systems. These synthetic fixture facts are used only for controlled testing. Message me to discuss a project.'};
+ const input={snapshot,prompt:'Review the services.',consent:true};
+ assert.equal((await call('/api/capture/review',input)).status,401);
+ const alice=await call('/api/account',{action:'register',username:'capture-alice',name:'Fixture Alice',password:'synthetic passphrase for capture testing'});
+ const bob=await call('/api/account',{action:'register',username:'capture-bob',name:'Fixture Bob',password:'another synthetic capture test passphrase'});
+ assert.equal(alice.status,201);assert.equal(bob.status,201);
+ assert.equal((await call('/api/capture/review',input,alice.cookie,'https://evil.test')).status,403);
+ assert.equal((await call('/api/capture/review',{...input,consent:false},alice.cookie)).status,400);
+ assert.equal((await call('/api/capture/review',{...input,prompt:'x'.repeat(1501)},alice.cookie)).status,400);
+ assert.equal((await call('/api/capture/review',{...input,snapshot:{...snapshot,text:'x'.repeat(110000)}},alice.cookie)).status,413);
+ assert.equal((await call('/unconfigured',input,alice.cookie)).status,503);
+ assert.equal((await call('/calls')).body.calls,0);
+ const response=await call('/api/capture/review',input,alice.cookie);assert.equal(response.status,200);assert.equal(response.body.report.mode,'ai');assert.equal(response.body.report.source.platform,'upwork');
+ const saved=await call('/api/reports',{report:{...response.body.report,tool:'capture'}},alice.cookie);assert.equal(saved.status,201);
+ assert.equal((await call('/api/reports',null,bob.cookie)).body.reports.length,0);
+ const own=(await call('/api/reports',null,alice.cookie)).body.reports;assert.equal(own[0].cloudId,saved.body.id);assert.equal(own[0].source.text,snapshot.text);
+ for(const prompt of ['bad-quotes','invalid-json','provider-error'])assert.equal((await call('/api/capture/review',{...input,prompt},alice.cookie)).status,502);
+ assert.equal((await call('/api/capture/review',input,alice.cookie)).status,200);
+ assert.equal((await call('/api/capture/review',input,alice.cookie)).status,429);
+ assert.equal((await call('/calls')).body.calls,5);
+ }finally{await mf.dispose();}
+});

@@ -8,6 +8,12 @@ The root Python app below is retained as the original local starter. The hosted 
 
 An open-source workspace for freelancers, careers, personal branding and practical professional calculations, based on the owner's product brief.
 
+## Profile and website capture
+
+Open `/capture` to review a page snapshot. The [Chrome extension](extension/README.md) captures loaded profile/page text after a click, lets you redact it, and transfers it to your signed-in toolkit. JSON snapshot import, local review, optional consented AI review, private account saving and saved-review title sync are implemented. Download the developer ZIP from `/toolkit-capture-extension.zip` or `hosted-app/public/toolkit-capture-extension.zip`.
+
+See [capture setup and AI configuration](hosted-app/docs/CAPTURE.md) and [validation](reports/2026-10-16/CAPTURE_VALIDATION.md). No provider is enabled automatically. The extension is not yet a Chrome Web Store release; real platform layouts need owner acceptance testing.
+
 ## Workflow development
 
 The new `/workflows` page connects requirements and evidence notes to dependent tasks, checks capacity and deadlines, and compares a higher-effort scenario. It includes three audience examples, editable plans, device save/restore/delete, account snapshots and JSON import/export. The main directory now groups tools by Freelancers, Students and Professionals with subcategory filtering.

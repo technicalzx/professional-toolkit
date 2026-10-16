@@ -166,3 +166,11 @@ export async function authorizeImport(request,db){
   return null;
  }catch(e){if(e instanceof AuthError)return json({error:e.message,code:e.status===429?'IMPORT_QUOTA':'IMPORT_AUTH'},e.status);return json({error:'Import authorization unavailable.',code:'IMPORT_AUTH'},503)}
 }
+
+export async function authorizeReview(request,db){
+ try{
+  const user=await currentUser(request,db);if(!user)fail('Sign in to request AI review.',401);
+  await rate(db,`review-user:${user.id}`,5);await rate(db,'review-global',100);
+  return null;
+ }catch(e){if(e instanceof AuthError)return json({error:e.message},e.status);return json({error:'Review quota storage is unavailable.'},503)}
+}

@@ -39,3 +39,7 @@ Open `/workflows` to plan dependent tasks for freelance delivery, student projec
 Inputs remain in page memory unless explicitly saved/exported. Device snapshots are unencrypted. Account snapshots use the existing private report API and its size/count limits. Large plans can be downloaded even when they exceed the account report limit. Loading an example, restoring/importing a plan or resetting replaces the current editor contents. Saved outputs are recomputed from validated inputs when reopened.
 
 See [research and design](../reports/2026-10-16/RESEARCH.md) and [validation](../reports/2026-10-16/VALIDATION.md). Planned extraction, evidence verification, calendar integration and multi-person scheduling are not implemented.
+
+## Profile capture
+
+Open `/capture` for browser/JSON snapshots, review and private account saving. The Chrome extension ZIP is served at `/toolkit-capture-extension.zip`. See [setup and optional AI configuration](docs/CAPTURE.md).

@@ -1,3 +1,5 @@
+import './capture-api.test.mjs';
+import './capture.test.mjs';
 // Include planning coverage in the existing contributor CI entry point.
 import './planner.test.mjs';
 import test from 'node:test';
