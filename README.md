@@ -32,7 +32,7 @@ See docs/BLUEPRINT.md. Contributors should implement small complete tools and re
 
 ## Repository
 
-Source: https://github.com/AbiHurairah-OpenSource/professional-toolkit
+Source: https://github.com/technicalzx/professional-toolkit
 
 Licensed under the [MIT License](LICENSE). Dependencies and bundled third-party code retain their own licenses and notices. Contributions are welcome through reviewed pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md), [community expectations](CODE_OF_CONDUCT.md), and [security reporting](SECURITY.md).
 
