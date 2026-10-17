@@ -40,7 +40,18 @@ export type Task = {
   deliverableId: string;
   status: WorkStatus;
 };
-/** Canonical output of validateProject; legacy optional evidence fields are normalized here. */
+export type TimeEntry = {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  workDate: string;
+  durationSeconds: number;
+  note: string;
+  sourceLabel: string;
+  externalId: string;
+  importedAt: string;
+};
+/** Canonical output of validateProject; legacy optional evidence/time fields are normalized here. */
 export type Project = {
   kind: "toolkit-project";
   schemaVersion: 1;
@@ -55,6 +66,7 @@ export type Project = {
   createdAt: string;
   updatedAt: string;
   sources: ProjectSource[];
+  timeEntries: TimeEntry[];
   requirements: Requirement[];
   deliverables: Deliverable[];
   tasks: Task[];

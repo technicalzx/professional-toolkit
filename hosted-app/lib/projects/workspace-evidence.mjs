@@ -1,10 +1,12 @@
 import { validateProject } from "./engine.mjs";
 
-/** A baseline records scope, but must not become a hidden archive of removed private sources. */
+/** A baseline records scope, never a hidden archive of private source or time records. */
 export function normalizeProjectBaseline(projectInput, baselineInput) {
   const project = validateProject(projectInput);
   if (baselineInput == null) return null;
-  const baseline = validateProject(baselineInput);
+  // Time records are current project activity, not scope. Discard them before
+  // validating imported baselines so even malformed legacy time data cannot survive.
+  const baseline = validateProject({ ...baselineInput, timeEntries: [] });
   if (baseline.id !== project.id || baseline.audience !== project.audience)
     throw Error("Baseline must match this project and audience.");
   const current = new Map(project.sources.map((source) => [source.id, source]));

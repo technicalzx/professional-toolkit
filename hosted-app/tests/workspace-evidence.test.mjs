@@ -179,3 +179,35 @@ test("imported baselines cannot retain revised, removed or forged same-revision 
     false,
   );
 });
+
+
+test("scope baselines discard time records on import and evidence changes without mutating current logs", () => {
+  const { entry } = fixture();
+  const timeEntry = {
+    id: "l-scope-fixture", taskId: entry.project.tasks[0].id,
+    taskTitle: entry.project.tasks[0].title, workDate: "2026-10-17",
+    durationSeconds: 3600, note: "SYNTHETIC_TIME_PRIVATE_NOTE",
+    sourceLabel: "synthetic-provider", externalId: "scope-log-1",
+    importedAt: "2026-10-17T10:00:00.000Z",
+  };
+  const recorded = { ...entry.project, timeEntries: [timeEntry] };
+  const baselineInput = structuredClone(recorded);
+  const baseline = normalizeProjectBaseline(recorded, baselineInput);
+  assert.deepEqual(baseline.timeEntries, []);
+  assert.equal(JSON.stringify(baseline).includes(timeEntry.note), false);
+  assert.equal(baseline.sources[0].snapshot.text, recorded.sources[0].snapshot.text);
+  assert.equal(baseline.requirements[0].evidenceLinks[0].quote, recorded.requirements[0].evidenceLinks[0].quote);
+  assert.deepEqual(baselineInput.timeEntries, [timeEntry]);
+  assert.deepEqual(recorded.timeEntries, [timeEntry]);
+  const malformed = normalizeProjectBaseline(recorded, {
+    ...entry.baseline, timeEntries: { privateLegacyArchive: timeEntry.note },
+  });
+  assert.deepEqual(malformed.timeEntries, []);
+  assert.equal(JSON.stringify(malformed).includes(timeEntry.note), false);
+  const changed = applyProjectEvidenceChange(
+    { ...entry, project: recorded, baseline: baselineInput }, recorded,
+  );
+  assert.deepEqual(changed.project.timeEntries, [timeEntry]);
+  assert.deepEqual(changed.baseline.timeEntries, []);
+  assert.equal(normalizeProjectBaseline(recorded, null), null);
+});

@@ -1,4 +1,6 @@
 import { buildPlan, validatePlan } from "../toolkit/planner.mjs";
+import {validateTimeEntries, parseTimeLogCsv, prepareTimeImport, applyTimeImport, summarizeTime, exportTimeCsv, timeLogTimestamp} from "./time-logs.mjs";
+export {parseTimeLogCsv} from "./time-logs.mjs";
 import {
   canonicalSourceSnapshot,
   validateProjectSources,
@@ -341,6 +343,7 @@ export function validateProject(input) {
     createdAt: timestamp(input.createdAt, "Created time"),
     updatedAt: timestamp(input.updatedAt, "Updated time"),
     sources: validateProjectSources(input.sources),
+    timeEntries: validateTimeEntries(input.timeEntries),
   };
   if (!/^[A-Z]{3}$/.test(project.currency))
     fail("Currency must use three uppercase letters.");
@@ -441,6 +444,7 @@ export function validateProject(input) {
       ...deliverableIds,
       ...project.tasks.map((value) => value.id),
       ...project.sources.map((value) => value.id),
+      ...project.timeEntries.map((value) => value.id),
     ],
     "Project record IDs",
   );
@@ -803,6 +807,44 @@ export function inspectProjectEvidence(input) {
   return inspectEvidence(validateProject(input));
 }
 
+function timeMutationTime(project, now) {
+  timeLogTimestamp(now);
+  return new Date(Math.max(Date.parse(now), Date.parse(project.updatedAt), Date.parse(project.createdAt))).toISOString();
+}
+
+export function prepareTimeLogImport(input, csv, options, now = new Date().toISOString()) {
+  const project = validateProject(input);
+  return prepareTimeImport(project, csv, options, timeMutationTime(project, now));
+}
+
+export function applyTimeLogImport(input, preview, options = {}, now = new Date().toISOString()) {
+  const project = validateProject(input), result = applyTimeImport(project, preview, options);
+  if (!result.addedCount) return {project, addedCount:0, skippedCount:result.skippedCount};
+  const importedAt = timeMutationTime(project, now), existing = new Set(project.timeEntries.map(value => value.id));
+  project.timeEntries = result.timeEntries.map(value => existing.has(value.id) ? value : {...value, importedAt});
+  project.updatedAt = importedAt;
+  return {project:validateProject(project), addedCount:result.addedCount, skippedCount:result.skippedCount};
+}
+
+export function removeProjectTimeEntry(input, entryId, now = new Date().toISOString()) {
+  const project = validateProject(input);
+  if (!project.timeEntries.some(value => value.id === entryId)) fail("Choose an existing time entry to remove.");
+  project.timeEntries = project.timeEntries.filter(value => value.id !== entryId);
+  project.updatedAt = timeMutationTime(project, now);
+  return validateProject(project);
+}
+
+export function clearProjectTimeEntries(input, now = new Date().toISOString()) {
+  const project = validateProject(input);
+  if (!project.timeEntries.length) return project;
+  project.timeEntries = [];
+  project.updatedAt = timeMutationTime(project, now);
+  return validateProject(project);
+}
+
+export function summarizeProjectTime(input) { return summarizeTime(validateProject(input)); }
+export function exportProjectTimeCsv(input) { return exportTimeCsv(validateProject(input)); }
+
 export function serializeProject(project) {
   return JSON.stringify(validateProject(project), null, 2);
 }
@@ -837,6 +879,7 @@ export function exportProjectMarkdown(input, format = "handover") {
   const project = validateProject(input),
     plan = buildProjectPlan(project);
   const evidence = inspectEvidence(project);
+  const time = summarizeTime(project);
   const labels = {
     handover: "Project handover",
     client: "Client scope and delivery review",
@@ -885,6 +928,15 @@ export function exportProjectMarkdown(input, format = "handover") {
               ],
         )
       : ["No source excerpts are linked to this project.", ""]),
+    "## Recorded time and estimate feedback",
+    "",
+    `Recorded time: ${time.loggedHours} hours in ${time.entryCount} entries. ${time.dateRange ? `Supplied source dates: ${time.dateRange.first} to ${time.dateRange.last}.` : "No time records supplied."}`,
+    `Orphaned work: ${time.orphanedHours} hours in ${time.orphanedEntryCount} entries whose task is no longer in the current scope. These records are retained for review and are not assigned to another task automatically.`,
+    ...time.tasks.map(task => `- ${md(task.taskId)}: ${md(task.taskTitle)}; current estimate ${task.estimatedHours}h; logged ${task.loggedHours}h from ${task.entryCount} entries; recorded variance ${task.varianceHours === null ? "unknown (no time records)" : `${task.varianceHours}h`}; coverage: ${task.coverage}.`),
+    ...[...new Set(project.timeEntries.map(value => value.sourceLabel))].map(label => `- User-supplied time source: ${md(label)}.`),
+    md(time.methodology),
+    "Raw time notes are omitted from this Markdown pack. Project JSON and time CSV retain the reviewed time records; spreadsheet exports may prefix dangerous formula text for safety.",
+    "",
     "## Plan and estimates",
     "",
     `Total scope: ${plan.totalHours} hours. Remaining task effort: ${plan.remainingHours} hours. Capacity: ${plan.capacityHours} hours. Overflow: ${plan.overflowHours} hours.`,

@@ -154,7 +154,7 @@ export async function projectStore(request, db) {
       return reply(
         {
           error:
-            "This project and its baseline exceed the 60 KB account storage limit. Shorten the brief or evidence notes.",
+            "This project and its baseline exceed the 60 KB account storage limit. Export and remove old time entries, or shorten the brief and evidence notes.",
         },
         413,
       );
@@ -179,6 +179,18 @@ export async function projectStore(request, db) {
           {
             error:
               "This project contains source evidence. Refresh the application before saving so an older client cannot discard it.",
+            code: "PROJECT_CLIENT_OUTDATED",
+          },
+          409,
+        );
+      if (
+        !Object.hasOwn(data.project, "timeEntries") &&
+        (saved.project.timeEntries?.length ?? 0) > 0
+      )
+        return reply(
+          {
+            error:
+              "This project contains recorded time. Refresh the application before saving so an older client cannot discard it.",
             code: "PROJECT_CLIENT_OUTDATED",
           },
           409,

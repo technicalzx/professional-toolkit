@@ -14,7 +14,7 @@ test('project account storage enforces ownership, revision concurrency and bound
   const entry=`import {account,reportStore} from './lib/auth/service.mjs';
 import {projectStore} from './lib/projects/store.mjs';
 export default {fetch(r,e){const p=new URL(r.url).pathname;return p==='/api/account'?account(r,e.DB):p==='/api/reports'?reportStore(r,e.DB):projectStore(r,e.DB)}};`;
-  const mf=new Miniflare({modules:[{type:'ESModule',path:'index.mjs',contents:entry},...['lib/auth/service.mjs','lib/projects/store.mjs','lib/projects/engine.mjs','lib/projects/evidence.mjs','lib/projects/workspace-evidence.mjs','lib/capture/snapshot.mjs','lib/toolkit/planner.mjs'].map(path=>({type:'ESModule',path,contents:source(path)}))],compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']});
+  const mf=new Miniflare({modules:[{type:'ESModule',path:'index.mjs',contents:entry},...['lib/auth/service.mjs','lib/projects/store.mjs','lib/projects/engine.mjs','lib/projects/evidence.mjs','lib/projects/workspace-evidence.mjs','lib/projects/time-logs.mjs','lib/capture/snapshot.mjs','lib/toolkit/planner.mjs'].map(path=>({type:'ESModule',path,contents:source(path)}))],compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']});
   try{
     const db=await mf.getD1Database('DB');
     for(const query of source('drizzle/0000_swift_wendigo.sql').split('--> statement-breakpoint').map(x=>x.trim()).filter(Boolean))await db.prepare(query).run();
@@ -159,6 +159,62 @@ export default {fetch(r,e){const p=new URL(r.url).pathname;return p==='/api/acco
       }finally{
         if(currentRevision)assert.equal((await call({id:linked.id,baseRevision:currentRevision},alice.cookie,'DELETE')).status,200);
       }
+      assert.deepEqual((await call(null,alice.cookie)).body.projects,[revisionTwo]);
+    });
+
+    await t.test('recorded time stays private, survives optimistic edits, rejects outdated clients, and never hides in scope baselines',async()=>{
+      const project=fixture('Private recorded work');
+      const marker='TIME_FIXTURE_PRIVATE_NOTE';
+      const timeEntry={id:'l-private-fixture',taskId:project.tasks[0].id,taskTitle:project.tasks[0].title,workDate:'2026-10-17',durationSeconds:3600,note:marker,sourceLabel:'synthetic-provider',externalId:'entry-1',importedAt:'2026-10-17T10:00:00.000Z'};
+      const recorded={...project,timeEntries:[timeEntry]};
+      let currentRevision=0;
+      try{
+        const saved=await call({project:recorded,baseline:recorded,baseRevision:0},alice.cookie);
+        assert.equal(saved.status,201);currentRevision=saved.body.revision;
+        assert.deepEqual(saved.body.project.timeEntries,[timeEntry]);
+        assert.deepEqual(saved.body.baseline.timeEntries,[]);
+        let raw=await db.prepare('SELECT content FROM reports WHERE id=? AND user_id=?').bind(project.id,alice.body.user.id).first();
+        assert.deepEqual(JSON.parse(raw.content).baseline.timeEntries,[]);
+        assert.equal(JSON.stringify((await call(null,bob.cookie)).body).includes(marker),false);
+        assert.equal((await call({project:recorded,baseline:recorded,baseRevision:1},bob.cookie)).status,409);
+        assert.equal((await call({id:project.id,baseRevision:1},bob.cookie,'DELETE')).status,409);
+
+        // Simulate a pre-normalization row. Read responses must not expose its hidden time archive.
+        const legacyEnvelope={kind:'project-workspace',...saved.body,baseline:{...saved.body.baseline,timeEntries:[timeEntry]}};
+        await db.prepare('UPDATE reports SET content=? WHERE id=? AND user_id=?').bind(JSON.stringify(legacyEnvelope),project.id,alice.body.user.id).run();
+        const reopened=(await call(null,alice.cookie)).body.projects.find(value=>value.project.id===project.id);
+        assert.deepEqual(reopened.project.timeEntries,[timeEntry]);
+        assert.deepEqual(reopened.baseline.timeEntries,[]);
+        const legacyClient=structuredClone(recorded);delete legacyClient.timeEntries;
+        raw=await db.prepare('SELECT content FROM reports WHERE id=? AND user_id=?').bind(project.id,alice.body.user.id).first();
+        const outdated=await call({project:legacyClient,baseline:legacyEnvelope.baseline,baseRevision:1},alice.cookie);
+        assert.equal(outdated.status,409);assert.equal(outdated.body.code,'PROJECT_CLIENT_OUTDATED');
+        assert.equal((await db.prepare('SELECT content FROM reports WHERE id=? AND user_id=?').bind(project.id,alice.body.user.id).first()).content,raw.content);
+
+        const edits=await Promise.all([7200,10800].map(durationSeconds=>call({project:{...recorded,timeEntries:[{...timeEntry,durationSeconds,note:marker+' '+durationSeconds}]},baseline:legacyEnvelope.baseline,baseRevision:1},alice.cookie)));
+        assert.deepEqual(edits.map(value=>value.status).sort(),[200,409]);
+        const winner=edits.find(value=>value.status===200).body;currentRevision=winner.revision;
+        assert.equal(currentRevision,2);assert.deepEqual(winner.baseline.timeEntries,[]);
+        assert.equal(winner.project.timeEntries.length,1);
+        assert.deepEqual((await call(null,alice.cookie)).body.projects.find(value=>value.project.id===project.id),winner);
+        raw=await db.prepare('SELECT content FROM reports WHERE id=? AND user_id=?').bind(project.id,alice.body.user.id).first();
+        assert.deepEqual(JSON.parse(raw.content).baseline.timeEntries,[]);
+        assert.equal((await call({id:project.id,baseRevision:1},alice.cookie,'DELETE')).status,409);
+
+        // An explicit empty collection is intentional removal, unlike an omitted legacy field.
+        const cleared=await call({project:{...winner.project,timeEntries:[]},baseline:legacyEnvelope.baseline,baseRevision:2},alice.cookie);
+        assert.equal(cleared.status,200);currentRevision=cleared.body.revision;
+        assert.deepEqual(cleared.body.project.timeEntries,[]);assert.deepEqual(cleared.body.baseline.timeEntries,[]);
+        raw=await db.prepare('SELECT content FROM reports WHERE id=? AND user_id=?').bind(project.id,alice.body.user.id).first();
+        assert.equal(raw.content.includes(marker),false);assert.equal(raw.content.includes(timeEntry.externalId),false);
+        const legacyEmpty=structuredClone(cleared.body.project);delete legacyEmpty.timeEntries;
+        const compatible=await call({project:legacyEmpty,baseline:cleared.body.baseline,baseRevision:currentRevision},alice.cookie);
+        assert.equal(compatible.status,200);currentRevision=compatible.body.revision;
+        assert.deepEqual(compatible.body.project.timeEntries,[]);
+      }finally{
+        if(currentRevision)assert.equal((await call({id:project.id,baseRevision:currentRevision},alice.cookie,'DELETE')).status,200);
+      }
+      assert.equal(await db.prepare('SELECT id FROM reports WHERE id=?').bind(project.id).first(),null);
       assert.deepEqual((await call(null,alice.cookie)).body.projects,[revisionTwo]);
     });
 
