@@ -26,54 +26,25 @@ import {
   exportProjectMarkdown,
   importProject,
   projectTemplates,
+  addProjectSource,
 } from "../lib/projects/engine.mjs";
+import ProjectEvidencePanel from "./project-evidence-panel";
+import {
+  applyProjectEvidenceChange,
+  normalizeProjectBaseline,
+} from "../lib/projects/workspace-evidence.mjs";
+import {
+  restoreEvidenceDraft,
+  EVIDENCE_DRAFT_KEY,
+} from "../lib/projects/evidence-handoff.mjs";
 import "./project-workspace.css";
+import type {
+  Audience,
+  WorkStatus as Status,
+  Requirement,
+  Project,
+} from "../lib/projects/types";
 
-type Audience = "freelancer" | "student" | "professional";
-type Status = "todo" | "doing" | "done";
-type Requirement = {
-  id: string;
-  title: string;
-  acceptanceCriteria: string;
-  evidenceNote: string;
-  status: "proposed" | "confirmed" | "accepted";
-  sourceLine: number;
-};
-type Deliverable = {
-  id: string;
-  title: string;
-  requirementIds: string[];
-  status: Status;
-  evidenceNote: string;
-};
-type Task = {
-  id: string;
-  title: string;
-  hours: number;
-  dueDay: number;
-  dependsOn: string[];
-  requirementIds: string[];
-  deliverableId: string;
-  status: Status;
-};
-type Project = {
-  kind: "toolkit-project";
-  schemaVersion: 1;
-  id: string;
-  title: string;
-  audience: Audience;
-  brief: string;
-  days: number;
-  hoursPerDay: number;
-  hourlyRate: number;
-  currency: string;
-  createdAt: string;
-  updatedAt: string;
-  requirements: Requirement[];
-  deliverables: Deliverable[];
-  tasks: Task[];
-  assumptions: string[];
-};
 type Entry = {
   project: Project;
   baseline: Project | null;
@@ -103,14 +74,17 @@ const descriptions: Record<Audience, string> = {
   professional: "Compare decisions. Verify delivery. Prepare a handover.",
 };
 function canonical(p: unknown): Project {
-  return validateProject(p) as Project;
+  return validateProject(p);
 }
 function normalize(raw: unknown): Entry {
   if (!raw || typeof raw !== "object")
     throw new Error("Invalid project record.");
   const r = raw as Entry;
   const project = canonical(r.project);
-  const baseline = r.baseline ? canonical(r.baseline) : null;
+  const baseline = normalizeProjectBaseline(
+    project,
+    r.baseline,
+  ) as unknown as Project | null;
   if (
     baseline &&
     (baseline.id !== project.id || baseline.audience !== project.audience)
@@ -177,8 +151,13 @@ export default function ProjectWorkspace() {
     [account, setAccount] = useState<Account | null>(null),
     [busy, setBusy] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const [evidenceDraft, setEvidenceDraft] = useState<ReturnType<
+    typeof restoreEvidenceDraft
+  > | null>(null);
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
   const entry = entries.find((x) => x.project.id === selected),
     p = entry?.project;
   let plan: ReturnType<typeof buildProjectPlan> | null = null,
@@ -229,6 +208,15 @@ export default function ProjectWorkspace() {
       );
     }
     setReady(true);
+    try {
+      const draft = sessionStorage.getItem(EVIDENCE_DRAFT_KEY);
+      if (draft) setEvidenceDraft(restoreEvidenceDraft(draft));
+    } catch (e) {
+      try {
+        sessionStorage.removeItem(EVIDENCE_DRAFT_KEY);
+      } catch {}
+      setError(err(e));
+    }
     refreshAccount();
   }, []);
   useEffect(() => {
@@ -248,6 +236,42 @@ export default function ProjectWorkspace() {
     }, 300);
     return () => clearTimeout(timer);
   }, [entries, ready, blocked]);
+  useEffect(() => {
+    if (!evidenceDraft) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    function checkExpiry() {
+      if (timer) clearTimeout(timer);
+      try {
+        const raw = sessionStorage.getItem(EVIDENCE_DRAFT_KEY);
+        if (!raw) {
+          setEvidenceDraft(null);
+          return;
+        }
+        restoreEvidenceDraft(raw);
+        timer = setTimeout(
+          checkExpiry,
+          Math.max(1, JSON.parse(raw).expiresAt - Date.now()),
+        );
+      } catch {
+        try {
+          sessionStorage.removeItem(EVIDENCE_DRAFT_KEY);
+        } catch {}
+        setEvidenceDraft(null);
+        setNotice(
+          "The page-evidence transfer expired. Return to capture or import its JSON if you still need it.",
+        );
+      }
+    }
+    const onVisible = () => {
+      if (document.visibilityState === "visible") checkExpiry();
+    };
+    checkExpiry();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [evidenceDraft]);
   async function refreshAccount() {
     try {
       const d = await response(
@@ -316,6 +340,79 @@ export default function ProjectWorkspace() {
       setTitle("");
       setBrief("");
       open(e);
+    } catch (e) {
+      setError(err(e));
+    }
+  }
+  function changeEvidence(
+    next: unknown,
+    change?: { sourceId: string; action: "revise" | "remove" },
+  ) {
+    try {
+      const project = canonical(next);
+      const current = entriesRef.current.find(
+        (e) => e.project.id === project.id,
+      );
+      if (!current || selectedRef.current !== project.id)
+        throw Error(
+          "The selected project changed. Open it again before editing evidence.",
+        );
+      const changed = applyProjectEvidenceChange(
+        current,
+        project,
+        change,
+      ) as Entry;
+      const list = entriesRef.current.map((e) =>
+        e.project.id === changed.project.id ? changed : e,
+      );
+      localStorage.setItem(
+        key,
+        JSON.stringify({ version: 1, projects: list.map(normalize) }),
+      );
+      setEntries(list);
+      setError("");
+      setSaved("Saved on this device");
+      setNotice(
+        change
+          ? "Source changed in this project and its saved scope baseline. Save to account to update its copy. Independently written notes and previously downloaded files are unchanged."
+          : "Evidence updated on this device. Save to account to sync it.",
+      );
+    } catch (e) {
+      setError(err(e));
+      throw e;
+    }
+  }
+  function addTransferredEvidence() {
+    if (!entry || !evidenceDraft || blocked) return;
+    try {
+      // Re-check the expiry at the point of use; loading the page does not extend it.
+      const stored = sessionStorage.getItem(EVIDENCE_DRAFT_KEY);
+      if (!stored)
+        throw Error(
+          "Evidence transfer unavailable. Return to capture or import JSON.",
+        );
+      const reviewed = restoreEvidenceDraft(stored);
+      const next = applyProjectEvidenceChange(
+        entry,
+        addProjectSource(entry.project, reviewed),
+      ) as Entry;
+      const list = entriesRef.current.map((e) =>
+        e.project.id === entry.project.id ? next : e,
+      );
+      // Retain the transfer if browser persistence fails, so navigating here cannot lose it.
+      localStorage.setItem(
+        key,
+        JSON.stringify({ version: 1, projects: list.map(normalize) }),
+      );
+      setEntries(list);
+      setTab("evidence");
+      setSaved("Saved on this device");
+      sessionStorage.removeItem(EVIDENCE_DRAFT_KEY);
+      setEvidenceDraft(null);
+      setError("");
+      setNotice(
+        "Reviewed snapshot added to project sources. Choose an exact excerpt to link it to the work.",
+      );
     } catch (e) {
       setError(err(e));
     }
@@ -667,6 +764,44 @@ export default function ProjectWorkspace() {
               </button>
             </section>
           )}
+          {evidenceDraft && (
+            <section
+              className="pw-panel pw-evidence-transfer"
+              aria-label="Pending page evidence"
+            >
+              <div>
+                <span className="pw-eyebrow">REVIEWED PAGE SNAPSHOT</span>
+                <h2>{evidenceDraft.title}</h2>
+                <p>
+                  {p
+                    ? "Add this snapshot to the selected project, then choose the excerpts you want to use."
+                    : "Open an existing project or create a project to reuse this source. The transfer expires after 15 minutes."}
+                </p>
+              </div>
+              <div className="pw-actions">
+                <button
+                  className="pw-primary"
+                  disabled={!p || blocked || !!validationError}
+                  onClick={addTransferredEvidence}
+                >
+                  Add source to this project
+                </button>
+                <button
+                  className="pw-button"
+                  onClick={() => {
+                    try {
+                      sessionStorage.removeItem(EVIDENCE_DRAFT_KEY);
+                      setEvidenceDraft(null);
+                    } catch (e) {
+                      setError(err(e));
+                    }
+                  }}
+                >
+                  Discard transfer
+                </button>
+              </div>
+            </section>
+          )}
           {!p ? (
             <>
               <section className="pw-heading">
@@ -942,6 +1077,7 @@ export default function ProjectWorkspace() {
                 {[
                   ["scope", "Scope & requirements", FileText],
                   ["work", "Delivery board", LayoutGrid],
+                  ["evidence", "Sources & evidence", Link2],
                   ["changes", "Scope changes", GitCompareArrows],
                   ["pack", "Work pack", Download],
                 ].map(([id, label, Icon]) => {
@@ -962,6 +1098,9 @@ export default function ProjectWorkspace() {
                   );
                 })}
               </nav>
+              {tab === "evidence" && (
+                <ProjectEvidencePanel project={p} onChange={changeEvidence} />
+              )}
               {tab === "scope" && (
                 <div className="pw-detail-grid">
                   <section>

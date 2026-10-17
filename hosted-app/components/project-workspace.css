@@ -1302,6 +1302,31 @@
 .pw-mobile-nav {
   display: none;
 }
+.pw-evidence-transfer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: #eef4ff;
+  border-color: #c7d7f4;
+}
+.pw-evidence-transfer h2 {
+  font-size: 16px;
+  margin-top: 7px;
+}
+.pw-evidence-transfer p {
+  font-size: 12px;
+  margin-top: 7px;
+}
+@media (max-width: 650px) {
+  .pw-evidence-transfer {
+    display: block;
+  }
+  .pw-evidence-transfer .pw-actions {
+    margin-top: 16px;
+  }
+}
+
 .pw-deliverable-title {
   margin-top: 12px;
 }

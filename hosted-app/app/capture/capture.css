@@ -1,0 +1,13 @@
+.capture-project-transfer {
+  padding: 22px 0;
+  border-top: 1px solid #e3e8ef;
+  border-bottom: 1px solid #e3e8ef;
+  margin: 22px 0;
+}
+.capture-project-transfer h2 {
+  font-size: 18px;
+}
+.capture-project-transfer p {
+  font-size: 13px;
+  margin: 10px 0 16px;
+}

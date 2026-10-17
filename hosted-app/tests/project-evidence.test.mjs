@@ -105,7 +105,11 @@ test("one source supports requirements and deliverables across client and portfo
   );
   for (const format of ["client", "portfolio", "handover"]) {
     const output = exportProjectMarkdown(p, format);
-    assert.ok(output.includes(quote.replace(/\./g, "\\.")));
+    assert.ok(
+      output.includes(
+        "Selected excerpt: I built an accessible contact form and tested keyboard navigation\\.",
+      ),
+    );
     assert.match(output, /source .* revision 1/);
     assert.match(output, /Captured:/);
     assert.match(
