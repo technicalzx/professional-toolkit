@@ -24,10 +24,11 @@ try {
   const brief = 'Deliver accessible onboarding\nDocument recovery and setup';
   const initialCsv = 'task,date,duration,id,note\nDiscovery,2026-10-17,1.5,clock-001,"=SUM(1,2)"\nReview,2026-10-17,0.5,clock-002,Reviewed validation';
   const noIdCsv = 'task,date,duration,id,note\nDiscovery,2026-10-18,15,,No external ID sample';
-  const ledger = () => page.evaluate(projectTitle => {
+  const ledgerEntry = () => page.evaluate(projectTitle => {
     const stored = JSON.parse(localStorage.getItem('professional-toolkit-projects-v1') || '{"projects":[]}');
-    return stored.projects.find(entry => entry.project.title === projectTitle)?.project;
+    return stored.projects.find(entry => entry.project.title === projectTitle);
   }, title);
+  const ledger = async () => (await ledgerEntry())?.project;
   const count = async label => Number(await page.locator('.pwt-counts > div').filter({has: page.getByText(label, {exact: true})}).locator('dd').innerText());
   async function csvInput(csv, unit = 'hours', fromFile = false) {
     if (fromFile) await page.getByLabel('Time CSV file', {exact: true}).setInputFiles({name: 'synthetic-time.csv', mimeType: 'text/csv', buffer: Buffer.from(csv)});
@@ -41,9 +42,23 @@ try {
     await page.getByRole('heading', {name: 'Review time import', exact: true}).waitFor();
   }
   async function apply() { await page.getByRole('button', {name: 'Import reviewed time', exact: true}).click(); await page.getByRole('status').filter({hasText: 'time entries added'}).waitFor(); }
+  async function accountResponse(saved) {
+    let body;
+    try { body = await saved.json(); } catch { body = {}; }
+    const code = typeof body.code === 'string' && /^[A-Z0-9_]{1,80}$/.test(body.code) ? `; code ${body.code}` : '';
+    assert.ok(saved.ok(), `Synthetic account save failed: HTTP ${saved.status()}${code}.`);
+    assert.ok(Number.isSafeInteger(body.revision), 'Account save must return a revision.');
+    return body;
+  }
   async function saveAccount() {
     const saving = page.waitForResponse(response => new URL(response.url()).pathname === '/api/projects' && response.request().method() === 'POST');
-    await page.getByRole('button', {name: 'Save to account', exact: true}).click(); assert.ok((await saving).ok());
+    await page.getByRole('button', {name: 'Save to account', exact: true}).click();
+    const body = await accountResponse(await saving);
+    await page.getByRole('status').filter({hasText: 'Saved to your private account.'}).waitFor();
+    // Success is a durability barrier: never wait for a later debounce to repair stale revision metadata.
+    const durable = await ledgerEntry();
+    assert.equal(durable.revision, body.revision); assert.ok(durable.cloudOwner); assert.equal(durable.dirty, false);
+    return body;
   }
   await page.goto(base);
   await page.getByRole('heading', {name: /One workspace/}).waitFor();
@@ -123,6 +138,43 @@ try {
     await saveAccount();
     const stored = await page.evaluate(async () => (await (await fetch('/api/projects')).json()).projects[0]);
     assert.equal(stored.project.timeEntries.length, 5); assert.equal((stored.baseline.timeEntries || []).length, 0);
+    const beforeFailure = await ledgerEntry();
+    let remoteFailureRevision;
+    await page.evaluate(({projectTitle, expectedRevision}) => {
+      window.__toolkitOriginalAccountStorageWrite = Storage.prototype.setItem;
+      window.__toolkitAccountStorageFailures = 0;
+      Storage.prototype.setItem = function (...args) {
+        if (this === localStorage) {
+          // Count only attempts for the new remotely committed revision, not an older pending autosave.
+          try { const workspace = JSON.parse(String(args[1])); const entry = workspace.projects?.find(value => value.project.title === projectTitle); if (entry?.revision === expectedRevision) window.__toolkitAccountStorageFailures++; } catch {}
+          throw Error('Synthetic account device storage failure');
+        }
+        return window.__toolkitOriginalAccountStorageWrite.apply(this, args);
+      };
+    }, {projectTitle: title, expectedRevision: beforeFailure.revision + 1});
+    try {
+      const saving = page.waitForResponse(response => new URL(response.url()).pathname === '/api/projects' && response.request().method() === 'POST');
+      await page.getByRole('button', {name: 'Save to account', exact: true}).click();
+      const remote = await accountResponse(await saving);
+      remoteFailureRevision = remote.revision;
+      assert.equal(remote.revision, beforeFailure.revision + 1);
+      await page.getByRole('alert').filter({hasText: 'The account copy was saved, but device storage failed:'}).waitFor();
+      // The root write and debounced autosave must both attempt the new revision before checking the stable warning.
+      await page.waitForFunction(() => window.__toolkitAccountStorageFailures >= 2);
+      await page.getByRole('alert').filter({hasText: 'The account copy was saved, but device storage failed:'}).waitFor();
+      assert.equal(await page.getByRole('status').filter({hasText: 'Saved to your private account.'}).count(), 0, 'Remote-only success must not claim that the device copy was saved.');
+      await page.getByRole('heading', {name: title, exact: true}).waitFor();
+      const durable = await ledgerEntry();
+      assert.equal(durable.revision, beforeFailure.revision, 'A blocked device write must retain the prior durable wrapper.');
+      assert.equal(durable.project.timeEntries.length, 5);
+      const remoteStored = await page.evaluate(async () => (await (await fetch('/api/projects')).json()).projects[0]);
+      assert.equal(remoteStored.revision, remote.revision); assert.equal(remoteStored.project.timeEntries.length, 5);
+    } finally {
+      await page.evaluate(() => { Storage.prototype.setItem = window.__toolkitOriginalAccountStorageWrite; delete window.__toolkitOriginalAccountStorageWrite; delete window.__toolkitAccountStorageFailures; });
+    }
+    // The new remote revision must remain in React state even though the device write failed.
+    const retried = await saveAccount();
+    assert.equal(retried.revision, remoteFailureRevision + 1, 'Retry must use the remembered remote revision instead of the stale device revision.');
   }
   // Wait for the exported current project and baseline to be persisted, rather than guessing a debounce delay.
   await page.waitForFunction(({projectTitle, expectedProject, expectedBaseline}) => {

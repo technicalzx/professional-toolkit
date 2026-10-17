@@ -13,6 +13,8 @@ The root application connects a brief, requirements, deliverables, tasks, eviden
 
 Removing a project from the device leaves its account copy available for restoration. **Delete account copy** separately removes the current saved revision after confirmation and keeps the device copy. An account conflict requires reloading the saved version after exporting any local edits you need to retain.
 
+Account saves persist the returned revision and account ownership to device storage before displaying success. If the remote commit succeeds but a device write fails, the warning distinguishes those outcomes: the previous durable device copy remains, and the new remote revision is retained in memory for a safe retry. That warning survives failed autosave attempts and clears after device recovery. Export current unsaved edits before reloading while a storage warning remains.
+
 ## Practical workflow
 
 1. Choose an audience, enter a project title and write the brief with one concrete requirement per line.

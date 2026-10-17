@@ -12,6 +12,7 @@ Durable handoff for the five-hour schedule. Verify code and open PRs before usin
 ## 17 October 2026: time logs connected to scope
 
 - Base: PR #9, `feature/productive-workspace`, `83df770`; open and all checks green at run start. Milestones: `06ad690` (domain/private storage) and `1f1ff02` (usable UI, atomic persistence and browser regression).
+- Account save/reload verification also hardened immediate revision-metadata persistence and safe retry after remote success plus device-write failure. See the validation record for the observed CI timing repair and account regression.
 - This run adds project-local CSV time import, explicit column/task mapping, external-ID reconciliation, reviewed possible duplicates, historical-task retention and estimate-versus-recorded-effort feedback. It reuses project envelopes; no new provider, runtime dependency or migration.
 - [Research, license and architecture decisions](../reports/2026-10-17/TIME_LOG_RESEARCH.md). [Verification](../reports/2026-10-17/TIME_LOG_VALIDATION.md) distinguishes local acceptance, hosted checks and release status. Missing logs remain unknown; all actual-time claims are supplied records.
 

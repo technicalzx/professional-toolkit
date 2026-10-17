@@ -64,6 +64,7 @@ type ApiResponse = {
   message?: string;
 };
 const key = "professional-toolkit-projects-v1";
+const accountDeviceFailurePrefix = "The account copy was saved, but device storage failed:";
 const labels: Record<Audience, string> = {
   freelancer: "Freelancers",
   student: "Students",
@@ -230,9 +231,10 @@ export default function ProjectWorkspace() {
           JSON.stringify({ version: 1, projects: valid }),
         );
         setSaved("Saved on this device");
+        setError((current) => current.startsWith(accountDeviceFailurePrefix) ? "" : current);
       } catch (e) {
-        setSaved("Current edits are not saved");
-        setError(err(e));
+        setSaved((current) => current === "Account saved; device copy is not saved" ? current : "Current edits are not saved");
+        setError((current) => current.startsWith(accountDeviceFailurePrefix) ? current : err(e));
       }
     }, 300);
     return () => clearTimeout(timer);
@@ -494,6 +496,7 @@ export default function ProjectWorkspace() {
     if (!p || !entry || !account) return;
     setBusy(true);
     setError("");
+    setNotice("");
     try {
       const project = canonical(p);
       const sentEntry = JSON.stringify(entry);
@@ -513,20 +516,35 @@ export default function ProjectWorkspace() {
         cloudOwner: account.id,
         dirty: false,
       });
-      setEntries((list) =>
-        list.map((e) =>
-          e.project.id !== p.id
-            ? e
-            : JSON.stringify(e) === sentEntry
-              ? normalized
-              : {
-                  ...e,
-                  revision: normalized.revision,
-                  cloudOwner: account.id,
-                  dirty: true,
-                },
-        ),
+      const merged = entriesRef.current.map((e) =>
+        e.project.id !== p.id
+          ? e
+          : JSON.stringify(e) === sentEntry
+            ? normalized
+            : {
+                ...e,
+                revision: normalized.revision,
+                cloudOwner: account.id,
+                dirty: true,
+              },
       );
+      try {
+        // Account revision/ownership must survive a reload before success is shown.
+        localStorage.setItem(
+          key,
+          JSON.stringify({ version: 1, projects: merged.map(normalize) }),
+        );
+      } catch (failure) {
+        // The remote commit already happened. Retain its revision in memory so
+        // retrying a device save cannot send a stale baseRevision or lose edits.
+        entriesRef.current = merged;
+        setEntries(merged);
+        setSaved("Account saved; device copy is not saved");
+        throw Error(`${accountDeviceFailurePrefix} ${err(failure)} Export your current device edits before reloading.`);
+      }
+      entriesRef.current = merged;
+      setEntries(merged);
+      setSaved("Saved on this device");
       setNotice(
         "Saved to your private account. Device edits made during the save remain unsynced.",
       );
