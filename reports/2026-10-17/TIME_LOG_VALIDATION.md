@@ -17,6 +17,7 @@ Runtime milestones: [`06ad690`](https://github.com/technicalzx/professional-tool
 | Existing project browser acceptance | Passed brief, evidence gates, delivery/scope changes, work packs, JSON import/export, reload, all audience examples and mobile navigation. Guest mode against full isolated build. |
 | Existing evidence browser acceptance | Passed reviewed capture transfer, exact links/provenance, redaction/removal baseline privacy, storage failure, expiry, reload and mobile keyboard flow. Guest mode against full isolated build. |
 | New time browser acceptance, full isolated Worker/D1, account mode | Passed mapped import, repeat-ID no-op, changed-ID conflict, invalid dates, atomic local-storage failure with retained draft/data, ID-less duplicate review/default skip/explicit inclusion, hours/minutes/H:mm:ss, spreadsheet-safe CSV, Markdown and JSON, reload, historical-task retention, deletion and 390px keyboard use. |
+| New time browser acceptance, client-only CI-equivalent preview | Passed in guest mode after the persistence-wait repair; original assertions retained. No account/database writes. |
 | Actual account round trips | Saved five populated records with an empty time baseline, then saved cleared records. The test account deletion returned 200 before PASS. Independent read-only SQLite count found zero synthetic users from all journey fixture display names. |
 | User local preview | Restored at `http://127.0.0.1:8790/` from the verified bundle, using the existing account state. Root/capture/account return 200; account response is `no-store`. No synthetic browser flow ran against that owner database. |
 
@@ -29,6 +30,8 @@ The initial full Node test invocation hit a native Windows callback assertion in
 Review caught negative variance being displayed for tasks with no logs. Those tasks now show unknown variance in summaries, UI and Markdown, with regression coverage. This prevents absent records from looking like measured under-budget work.
 
 The first new browser attempt found an automation locator mismatch for selects wrapped with labels and option text. The controls exposed the correct accessible combobox names. The script now selects those accessible roles; no runtime/UI change was needed. Failed selector attempts created no accounts. Account cleanup uses browser fetch so Secure loopback cookies are sent, and cleanup must pass before the script reports success.
+
+GitHub CI subsequently exposed a browser-test timing race in the client-only preview: the new project was visible before its debounced device save existed, so the initial preview-immutability assertion read an undefined saved record. The test now waits for durable project creation before importing and waits for exact exported project/baseline state before reload. It keeps every original assertion and replaces timing guesses with observable persistence conditions. Guest acceptance against the client-only preview passed in 6.8 seconds after this repair; runtime source and bundle were unchanged.
 
 The isolated test server on 8794 was stopped after acceptance and cleanup. Its synthetic database was separate from the preserved user preview state. No remote database, migration, provider, dependency, billing setting or production resource changed.
 

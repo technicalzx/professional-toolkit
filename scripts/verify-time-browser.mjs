@@ -53,6 +53,10 @@ try {
   await dialog.getByLabel('Brief · one deliverable per line', {exact: true}).fill(brief);
   await dialog.getByRole('button', {name: 'Create project', exact: true}).click();
   await page.getByRole('heading', {name: title, exact: true}).waitFor();
+  // Rendering the project precedes its debounced initial device save. Wait for durable creation before asserting preview immutability.
+  await page.waitForFunction(projectTitle => {
+    try { const stored = JSON.parse(localStorage.getItem('professional-toolkit-projects-v1') || '{"projects":[]}'); return stored.projects.some(entry => entry.project.title === projectTitle); } catch { return false; }
+  }, title);
   await page.getByRole('button', {name: 'Time & actuals', exact: true}).click();
   assert.equal(await page.getByRole('cell', {name: 'Unknown (no logs)', exact: true}).count(), 4, 'Tasks without time records must not report fabricated actual variance.');
   await csvInput(initialCsv, 'hours', true);
@@ -120,7 +124,11 @@ try {
     const stored = await page.evaluate(async () => (await (await fetch('/api/projects')).json()).projects[0]);
     assert.equal(stored.project.timeEntries.length, 5); assert.equal((stored.baseline.timeEntries || []).length, 0);
   }
-  await page.waitForTimeout(500); await page.reload(); await page.getByRole('button', {name: new RegExp(title)}).click();
+  // Wait for the exported current project and baseline to be persisted, rather than guessing a debounce delay.
+  await page.waitForFunction(({projectTitle, expectedProject, expectedBaseline}) => {
+    try { const stored = JSON.parse(localStorage.getItem('professional-toolkit-projects-v1') || '{"projects":[]}'); const saved = stored.projects.find(entry => entry.project.title === projectTitle); return !!saved && JSON.stringify(saved.project) === expectedProject && JSON.stringify(saved.baseline) === expectedBaseline; } catch { return false; }
+  }, {projectTitle: title, expectedProject: JSON.stringify(json.project), expectedBaseline: JSON.stringify(json.baseline)});
+  await page.reload(); await page.getByRole('button', {name: new RegExp(title)}).click();
   await page.getByRole('button', {name: 'Time & actuals', exact: true}).click();
   assert.equal((await ledger()).timeEntries.length, 5);
   await page.setViewportSize({width: 390, height: 844});
