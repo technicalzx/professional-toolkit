@@ -2,9 +2,9 @@
 
 ## Decision and implementation boundary
 
-Evolve the existing React/TypeScript application as a modular application. Keep pure domain engines independent of hosting and providers. Add infrastructure only when a workflow requires it. The current development slice introduces a portable planning kernel, three audience directories and a usable workflow page. It uses the existing report API for account snapshots and adds no database migration or Cloudflare resource.
+Evolve the existing React/TypeScript application as a modular application, keeping domain engines independent of hosting/providers. The source now includes the project workflow, ownership-checked revisioned `/api/projects` envelopes, scope comparison, work packs and project-scoped source evidence. Sources and pinned exact excerpts reuse the existing bounded report envelope; no database migration or Cloudflare resource was required. Baseline normalization prevents retained old source snapshots after revision/removal. Older clients cannot silently discard existing server evidence by omitting its fields.
 
-The rest of this document describes the target architecture, not deployed functionality. In particular, Workflows, R2 evidence storage, semantic retrieval, AI extraction and team workspaces remain proposed.
+Reconciled 17 October 2026: these features are implemented in PR #9 and locally tested, distinct from public production delivery. The remaining diagram is the target architecture. Workflows, R2 source files, semantic retrieval, AI extraction, global source sharing and team workspaces remain proposed. Current capabilities are documented in [PRODUCT_WORKSPACE.md](../../hosted-app/docs/PRODUCT_WORKSPACE.md).
 
 ```mermaid
 flowchart TD
@@ -27,7 +27,8 @@ flowchart TD
 - `lib/toolkit/workspace-catalog.mjs`: stable tool identifiers, audience taxonomy and explicit synthetic examples. Existing saved-report tool IDs remain valid.
 - `app/workflows/`: editable plan, requirements and tasks; results and limitations; device save/restore/delete; JSON import/export; account snapshots via the existing ownership-enforced API.
 - Existing `lib/auth/` and `app/api/`: remain the session and report boundary. A client-supplied audience never grants access.
-- Future `lib/domain/`: project revisions, requirements, evidence/claim references, decisions, artifacts and outcomes.
+- `lib/projects/`: current project engine, source normalization, exact evidence references, baseline privacy reconciliation and ownership-checked envelope storage.
+- Future domain extensions: formal decision/approval records, shared artifacts and recorded outcomes.
 - Future `lib/adapters/`: calendar, time-tracking and document providers with explicit scopes, revocation and typed source provenance.
 
 Extract shared packages only when a second consumer justifies them. Existing projects such as Midday and Plane illustrate package reuse; their monorepo scale is not a reason to add services preemptively.
@@ -42,7 +43,7 @@ This is a deterministic heuristic, not an optimal solver. Working days are ordin
 
 Evidence text is a user assertion. A non-empty reference is not proof of competence or acceptance. The engine separately reports missing evidence and requirements with no associated tasks. Persisted output is recalculated from validated input when reopened, preventing a modified exported result from being treated as authoritative.
 
-## Data model for the next persistence milestone
+## Data model for a future relational persistence milestone
 
 Continue using existing `users`, `sessions`, `recovery_codes`, `auth_limits` and `reports`. Introduce the following through additive, reviewed migrations only after the workflow pilot validates their need:
 
@@ -67,7 +68,7 @@ Use composite foreign keys including workspace/project ownership where applicabl
 
 ## Versioned API proposal
 
-Existing `/api/account`, `/api/reports` and `/api/import` remain active. Proposed endpoints:
+Existing `/api/account`, `/api/reports`, `/api/import` and `/api/projects` are active. The project API provides owner-scoped GET/POST/DELETE, expected revisions, source evidence and automatic baseline privacy normalization. The following versioned endpoints remain a proposal:
 
 | Endpoint | Contract |
 | --- | --- |
@@ -98,7 +99,7 @@ The connected account's Worker and D1 list operations succeeded on the research 
 
 1. Build structured extraction with source spans and user confirmation. Reject references absent from the supplied source. Version prompts, models and output schemas; abstain when evidence is insufficient.
 2. Introduce semantic requirement-to-artifact retrieval, followed by explicit source-backed review. Report relevance separately from evidence sufficiency. Do not infer a person's qualifications from keyword absence.
-3. Add versioned scope diffs and propagate changes through the dependency graph. Distinguish user-confirmed changes from model-proposed changes.
+3. Scope diffs and dependency propagation are implemented. Future extensions must distinguish user-confirmed changes from model proposals and formal approvals.
 4. Add multi-project capacity and configurable working calendars. For multiple people, compare a bounded constraint solver against simple scheduling baselines. Do not describe a heuristic as optimal.
 5. Add uncertainty modeling only after collecting consented actual-effort outcomes. Calibrate distributions and show assumptions/sample sizes before displaying probabilities.
 
