@@ -2,7 +2,7 @@
 
 ## Current implementation status — reconciled 17 October 2026
 
-PR #9 implements the connected project workflow, including private revision-checked project envelopes, scope baselines/diffs, manual evidence gates and client/portfolio/handover Markdown packs. These are present in source and tested on the Worker/D1 runtime; they are not future milestones. Reviewed capture snapshots connect to project-scoped sources and exact pinned excerpts, with stale/missing warnings and redaction/deletion across baselines. The next scheduled slice adds mapped CSV time records, duplicate/conflict review, historical-task retention and estimate-versus-recorded-effort feedback; actual effort remains user-supplied and incomplete logs are not final outcomes.
+PR #9 implements the connected project workflow, including private revision-checked project envelopes, scope baselines/diffs, manual evidence gates and client/portfolio/handover Markdown packs. These are present in source and tested on the Worker/D1 runtime; they are not future milestones. Reviewed capture snapshots connect to project-scoped sources and exact pinned excerpts, with stale/missing warnings and redaction/deletion across baselines. Mapped CSV time records, duplicate/conflict review, historical-task retention and estimate-versus-recorded-effort feedback are implemented; actual effort remains user-supplied and incomplete logs are not final outcomes. Shared-capacity scenarios now compare current projects alone versus together using explicit numbered-day alignment and availability overrides. Dated calendars and multi-person scheduling remain future work.
 
 Public production deployment, global cross-project sources, semantic AI, verified platform APIs, team approvals and customer validation remain separate. See [current capabilities](../../hosted-app/docs/PRODUCT_WORKSPACE.md) and the [continuous backlog](../../docs/CONTINUOUS_BACKLOG.md) before selecting work. Examples are synthetic and source correspondence does not verify profile ownership or claims.
 
@@ -20,7 +20,7 @@ Priorities are product judgments from desk research, not measured customer deman
 | P1 | Professional handover — implemented bounded slice | Project scope, task progress, manual checks and pinned excerpts | Export and account ownership tested; formal decision approval history remains future | Project records |
 | P1 | Research pilot | 15 discovery participants and paired workflow trials | Report observed outcomes and competing solutions; go/no-go gates in research | Usable prototype and consent |
 | P2 | Structured AI extraction | Brief/course/role text to proposed requirements with citations | Fixed evaluation set; abstention and prompt-injection checks; provider failure handling | Consent, usage caps and reviewed provider |
-| P2 | Cross-project capacity | Several projects share one person's calendar and availability | Detect conflicting commitments; test time zones and time off; show heuristic limits | Calendar model and pilot need |
+| P2 | Cross-project capacity — implemented bounded slice | Selected projects share explicit numbered-day availability | Solo/shared conflict comparison, overrides, reference freshness and exports; calendar/timezone model remains future | Existing canonical projects and private configuration snapshots |
 | P2 | Recorded effort - implemented bounded slice | Generic mapped CSV time logs, historical tasks and current-estimate comparison | Repeat-ID no-op, possible-duplicate review, atomic conflicts, strict supplied dates and exports tested; external client approval/billing remain future | Existing project envelopes |
 | P2 | Career pack | Resume/case-study/application drafts from approved evidence | Every experience claim cites a user-approved artifact; editable/exportable outputs | Evidence and document export |
 | P3 | Team collaboration | Roles, assignments, approval history and conflict-safe edits | Membership revocation tests; no stale-approval execution | Workspace model |
@@ -53,7 +53,7 @@ Status vocabulary: **existing** means present at the baseline; **new** means cod
 | Professionals / Collaboration | Decision log and handover | Planned | Revisions and reviewed evidence |
 | Professionals / Skills development | Skill-gap experiment planner | Planned | Requirements and demonstrated artifacts |
 | Professionals / Career evidence | Review/promotion evidence pack | Planned | Approved and appropriately redacted work records |
-| Professionals / Delivery planning | Cross-project capacity planner | Planned | Working calendar and conflict model |
+| Professionals / Delivery planning | Cross-project capacity planner | Implemented bounded slice | Explicit aligned abstract days; personal capacity and overrides; calendar integration remains planned |
 | Shared / Utilities | Search, favorites, saved reports, copy/export | Existing; expanded for workflows | Browser and existing accounts |
 | Shared / Intelligence | Structured extraction and evidence retrieval | Planned | Opt-in provider with evaluation and budgets |
 | Shared / Integrations | Calendar and time tracking | Planned | Verified API scope and authorization |

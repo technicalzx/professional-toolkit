@@ -22,7 +22,7 @@ This is a deterministic one-person planning prototype, not an AI scheduler or th
 
 ## Current milestone
 
-Implemented: three audience workflows; editable requirements and acceptance checks; evidence-gated delivery states; dependency-aware effort and capacity planning; recorded scope baselines and downstream change impact; client-review, portfolio and handover Markdown; multiple device projects; portable JSON; and private account storage with revision conflicts. Page capture and supporting utilities remain available alongside projects.
+Implemented: three audience workflows; editable requirements and acceptance checks; evidence-gated delivery states; dependency-aware effort and capacity planning; recorded scope baselines and downstream change impact; client-review, portfolio and handover Markdown; multiple device projects; portable JSON; and private account storage with revision conflicts. Page capture and supporting utilities remain available alongside projects. **Shared capacity** on the project overview now compares selected projects against one availability pool, with start-day alignment, time-off overrides, private scenario snapshots and exports. It uses numbered planning days; dated calendars remain future work.
 
 The production build and 85 automated checks passed during local release verification, followed by browser acceptance of the guest workflow and an isolated Worker/D1 account round trip. These are local validation results, not proof of a public deployment or the complete research roadmap. AI review still requires operator configuration; live platform analytics, billing, tax/currency feeds and wider integrations remain open work. See [capabilities, limits and verification](hosted-app/docs/PRODUCT_WORKSPACE.md).
 
