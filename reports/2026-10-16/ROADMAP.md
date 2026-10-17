@@ -2,7 +2,7 @@
 
 ## Current implementation status — reconciled 17 October 2026
 
-PR #9 implements the connected project workflow, including private revision-checked project envelopes, scope baselines/diffs, manual evidence gates and client/portfolio/handover Markdown packs. These are present in source and tested on the Worker/D1 runtime; they are not future milestones. This scheduled run connects reviewed capture snapshots to project-scoped sources and exact pinned excerpts, with stale/missing warnings and redaction/deletion across baselines.
+PR #9 implements the connected project workflow, including private revision-checked project envelopes, scope baselines/diffs, manual evidence gates and client/portfolio/handover Markdown packs. These are present in source and tested on the Worker/D1 runtime; they are not future milestones. Reviewed capture snapshots connect to project-scoped sources and exact pinned excerpts, with stale/missing warnings and redaction/deletion across baselines. The next scheduled slice adds mapped CSV time records, duplicate/conflict review, historical-task retention and estimate-versus-recorded-effort feedback; actual effort remains user-supplied and incomplete logs are not final outcomes.
 
 Public production deployment, global cross-project sources, semantic AI, verified platform APIs, team approvals and customer validation remain separate. See [current capabilities](../../hosted-app/docs/PRODUCT_WORKSPACE.md) and the [continuous backlog](../../docs/CONTINUOUS_BACKLOG.md) before selecting work. Examples are synthetic and source correspondence does not verify profile ownership or claims.
 
@@ -21,7 +21,7 @@ Priorities are product judgments from desk research, not measured customer deman
 | P1 | Research pilot | 15 discovery participants and paired workflow trials | Report observed outcomes and competing solutions; go/no-go gates in research | Usable prototype and consent |
 | P2 | Structured AI extraction | Brief/course/role text to proposed requirements with citations | Fixed evaluation set; abstention and prompt-injection checks; provider failure handling | Consent, usage caps and reviewed provider |
 | P2 | Cross-project capacity | Several projects share one person's calendar and availability | Detect conflicting commitments; test time zones and time off; show heuristic limits | Calendar model and pilot need |
-| P2 | Actual outcomes | Import time logs and record accepted deliverables | Idempotent import; estimate/actual comparisons with provenance | Authorized adapter |
+| P2 | Recorded effort - implemented bounded slice | Generic mapped CSV time logs, historical tasks and current-estimate comparison | Repeat-ID no-op, possible-duplicate review, atomic conflicts, strict supplied dates and exports tested; external client approval/billing remain future | Existing project envelopes |
 | P2 | Career pack | Resume/case-study/application drafts from approved evidence | Every experience claim cites a user-approved artifact; editable/exportable outputs | Evidence and document export |
 | P3 | Team collaboration | Roles, assignments, approval history and conflict-safe edits | Membership revocation tests; no stale-approval execution | Workspace model |
 | P3 | Sustainability | Sponsors documentation, hosted offer and support | Verified eligibility, cost per retained user and transparent terms | Demand and operating evidence |
@@ -39,7 +39,7 @@ Status vocabulary: **existing** means present at the baseline; **new** means cod
 | Freelancers / Delivery planning | Dependency and evidence planner | New | Browser kernel; optional existing report API |
 | Freelancers / Delivery planning | Scope-change impact | Implemented in PR #9 | Stable IDs and revision comparison |
 | Freelancers / Delivery planning | Acceptance and handover pack | Implemented in PR #9 | Manual evidence and pinned source excerpts |
-| Freelancers / Business planning | Estimate-to-actual review | Planned | Entered or authorized time records |
+| Freelancers / Business planning | Estimate-to-recorded-effort review | Implemented in PR #9 | Mapped generic CSV; supplied dates, external IDs and duplicate review |
 | Freelancers / Client acquisition | Opportunity pipeline and follow-up drafts | Planned | Projects; any sending requires explicit user action |
 | Students / Academic progress | GPA and marks percentage | Existing | Institution/user inputs |
 | Students / Opportunities | Brief/role matcher | Existing | Literal comparison |

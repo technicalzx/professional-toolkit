@@ -2,7 +2,7 @@
 
 ## Decision and implementation boundary
 
-Evolve the existing React/TypeScript application as a modular application, keeping domain engines independent of hosting/providers. The source now includes the project workflow, ownership-checked revisioned `/api/projects` envelopes, scope comparison, work packs and project-scoped source evidence. Sources and pinned exact excerpts reuse the existing bounded report envelope; no database migration or Cloudflare resource was required. Baseline normalization prevents retained old source snapshots after revision/removal. Older clients cannot silently discard existing server evidence by omitting its fields.
+Evolve the existing React/TypeScript application as a modular application, keeping domain engines independent of hosting/providers. The source now includes the project workflow, ownership-checked revisioned `/api/projects` envelopes, scope comparison, work packs and project-scoped source evidence. Sources and pinned exact excerpts reuse the existing bounded report envelope; no database migration or Cloudflare resource was required. Baseline normalization prevents retained old source snapshots after revision/removal. Older clients cannot silently discard existing server evidence or time logs by omitting their fields. Bounded mapped CSV time records reuse the same project envelope, preserve historical task labels and stay out of scope baselines. Actuals remain distinct from estimates and do not add a calendar, billing or provider integration.
 
 Reconciled 17 October 2026: these features are implemented in PR #9 and locally tested, distinct from public production delivery. The remaining diagram is the target architecture. Workflows, R2 source files, semantic retrieval, AI extraction, global source sharing and team workspaces remain proposed. Current capabilities are documented in [PRODUCT_WORKSPACE.md](../../hosted-app/docs/PRODUCT_WORKSPACE.md).
 
@@ -28,7 +28,8 @@ flowchart TD
 - `app/workflows/`: editable plan, requirements and tasks; results and limitations; device save/restore/delete; JSON import/export; account snapshots via the existing ownership-enforced API.
 - Existing `lib/auth/` and `app/api/`: remain the session and report boundary. A client-supplied audience never grants access.
 - `lib/projects/`: current project engine, source normalization, exact evidence references, baseline privacy reconciliation and ownership-checked envelope storage.
-- Future domain extensions: formal decision/approval records, shared artifacts and recorded outcomes.
+- `lib/projects/time-logs.mjs`: bounded comma-CSV parser, supplied-date/duration mapping, external-ID conflicts, reviewed possible duplicates, retained historical task labels, recorded-effort summaries and spreadsheet-safe presentation export. No network or provider dependency.
+- Future domain extensions: formal decision/approval records, shared artifacts, verified provider adapters and rate/billing outcomes.
 - Future `lib/adapters/`: calendar, time-tracking and document providers with explicit scopes, revocation and typed source provenance.
 
 Extract shared packages only when a second consumer justifies them. Existing projects such as Midday and Plane illustrate package reuse; their monorepo scale is not a reason to add services preemptively.
