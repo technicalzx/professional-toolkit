@@ -29,6 +29,7 @@ import {
   addProjectSource,
 } from "../lib/projects/engine.mjs";
 import ProjectEvidencePanel from "./project-evidence-panel";
+import ProjectTimePanel from "./project-time-panel";
 import {
   applyProjectEvidenceChange,
   normalizeProjectBaseline,
@@ -382,6 +383,28 @@ export default function ProjectWorkspace() {
       throw e;
     }
   }
+  function changeTime(next: unknown): boolean {
+    try {
+      if (blocked) throw Error("Device storage is unavailable. Export your data before making changes.");
+      const project = canonical(next);
+      const current = entriesRef.current.find((e) => e.project.id === project.id);
+      if (!current || selectedRef.current !== project.id)
+        throw Error("The selected project changed. Open it again before editing time logs.");
+      const changed = normalize({ ...current, project, dirty: true });
+      const list = entriesRef.current.map((e) => e.project.id === project.id ? changed : e);
+      // Persist the complete candidate before publishing success or changing the UI.
+      localStorage.setItem(key, JSON.stringify({ version: 1, projects: list.map(normalize) }));
+      entriesRef.current = list;
+      setEntries(list);
+      setError("");
+      setSaved("Saved on this device");
+      setNotice("Time logs updated on this device. Save to account to sync that copy.");
+      return true;
+    } catch (e) {
+      setError(err(e));
+      throw e;
+    }
+  }
   function addTransferredEvidence() {
     if (!entry || !evidenceDraft || blocked) return;
     try {
@@ -601,7 +624,7 @@ export default function ProjectWorkspace() {
       setEntries((list) =>
         list.map((e) =>
           e.project.id === p.id
-            ? { ...e, baseline: structuredClone(valid), dirty: true }
+            ? { ...e, baseline: normalizeProjectBaseline(valid, valid) as Project, dirty: true }
             : e,
         ),
       );
@@ -1077,6 +1100,7 @@ export default function ProjectWorkspace() {
                 {[
                   ["scope", "Scope & requirements", FileText],
                   ["work", "Delivery board", LayoutGrid],
+                  ["time", "Time & actuals", Clock3],
                   ["evidence", "Sources & evidence", Link2],
                   ["changes", "Scope changes", GitCompareArrows],
                   ["pack", "Work pack", Download],
@@ -1098,6 +1122,9 @@ export default function ProjectWorkspace() {
                   );
                 })}
               </nav>
+              {tab === "time" && (
+                <ProjectTimePanel key={p.id} project={p} baseline={entry.baseline} revision={entry.revision} onChange={changeTime} />
+              )}
               {tab === "evidence" && (
                 <ProjectEvidencePanel project={p} onChange={changeEvidence} />
               )}

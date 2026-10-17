@@ -60,3 +60,4 @@ jobs:
           export TOOLKIT_PREVIEW_URL="http://127.0.0.1:8791"
           node ../scripts/verify-project-browser.mjs
           node ../scripts/verify-evidence-browser.mjs
+          node ../scripts/verify-time-browser.mjs
