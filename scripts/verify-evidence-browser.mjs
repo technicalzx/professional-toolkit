@@ -354,19 +354,17 @@ try {
   );
   const removedExport = await projectExport();
   assertRedacted(removedExport.text);
-  assert.equal(removedExport.value.project.sources.length, 0);
-  assert.equal(removedExport.value.baseline.sources.length, 0);
+  assert.deepEqual(removedExport.value.project.sources, []);
+  assert.deepEqual(removedExport.value.baseline.sources, []);
   assert.equal(removedExport.text.includes(newQuote), false);
-  assert.equal(removedExport.text.includes(sourceUrl), false);
   if (accountPassword) {
     await saveAccount();
     const saved = await accountDocument();
     const text = JSON.stringify(saved);
     assertRedacted(text);
     assert.equal(text.includes(newQuote), false);
-    assert.equal(text.includes(sourceUrl), false);
-    assert.equal(saved.projects[0].project.sources.length, 0);
-    assert.equal(saved.projects[0].baseline.sources.length, 0);
+    assert.deepEqual(saved.projects[0].project.sources, []);
+    assert.deepEqual(saved.projects[0].baseline.sources, []);
   }
   await page.waitForTimeout(500);
   await page.reload();

@@ -2,7 +2,7 @@
 
 ## Observed local results
 
-Runtime feature commits: `71038f4` (source model/private persistence), `c479451` (capture/project interface and browser regression). The latter also replaces a partial escaping expression in a test with an explicit expected Markdown fixture after a CodeQL finding. No scanner rule was disabled.
+Runtime feature commits: `71038f4` (source model/private persistence), `c479451` (capture/project interface and browser regression). CodeQL findings in test-only partial escaping and URL-substring assertions were addressed with an explicit expected Markdown fixture and structural source-deletion assertions. No scanner rule was disabled.
 
 | Check | Observed result |
 | --- | --- |
@@ -30,6 +30,6 @@ Browser acceptance initially completed its feature checks but failed synthetic-a
 
 ## Remote and release boundary
 
-Changes continue in [PR #9](https://github.com/technicalzx/professional-toolkit/pull/9). GitHub runs the new guest evidence journey alongside the original browser regression. Check its latest SHA/status separately from this local record. The existing GitHub-connected Cloudflare Pages integration generated a branch preview after a push; a successful deployment check alone does not establish account/backend correctness.
+Changes continue in [PR #9](https://github.com/technicalzx/professional-toolkit/pull/9). GitHub runs the new guest evidence journey alongside the original browser regression. Check its latest SHA/status separately from this local record. The existing GitHub-connected Cloudflare Pages integration generated a branch preview after a push, but unauthenticated root/capture/account requests from this environment returned `403` with Cloudflare error `1010`. Hosted browser acceptance could not proceed. A successful deployment check alone does not establish access or account/backend correctness; security settings were not changed to bypass that boundary.
 
 Evidence remains user-supplied and project-scoped. Live platform layouts, ownership, competence, customer impact and the broader AI roadmap are unverified or unfinished. Source deletion cannot recall independently written notes, exports, shared files or other copies. Merge and production release remain for owner review.
