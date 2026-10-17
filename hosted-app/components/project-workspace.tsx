@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -30,6 +30,7 @@ import {
 } from "../lib/projects/engine.mjs";
 import ProjectEvidencePanel from "./project-evidence-panel";
 import ProjectTimePanel from "./project-time-panel";
+import CapacityWorkspace from "./capacity-workspace";
 import {
   applyProjectEvidenceChange,
   normalizeProjectBaseline,
@@ -152,6 +153,8 @@ export default function ProjectWorkspace() {
   const [format, setFormat] = useState("client"),
     [account, setAccount] = useState<Account | null>(null),
     [busy, setBusy] = useState(false);
+  const [showCapacity, setShowCapacity] = useState(false);
+  const capacityProjects = useMemo(() => entries.map((entry) => entry.project), [entries]);
   const importRef = useRef<HTMLInputElement>(null);
   const [evidenceDraft, setEvidenceDraft] = useState<ReturnType<
     typeof restoreEvidenceDraft
@@ -286,6 +289,7 @@ export default function ProjectWorkspace() {
     }
   }
   function open(e: Entry) {
+    setShowCapacity(false);
     setSelected(e.project.id);
     setAudience(e.project.audience);
     setTab("scope");
@@ -557,10 +561,13 @@ export default function ProjectWorkspace() {
     }
   }
   async function loadCloud() {
-    if (!account) return;
     setBusy(true);
     setError("");
     try {
+      const session = await response(await fetch("/api/account", { cache: "no-store" }));
+      const owner = session.user;
+      setAccount(owner || null);
+      if (!owner || typeof owner.id !== "string") throw Error("Sign in before loading account project copies.");
       const d = await response(
         await fetch("/api/projects", { cache: "no-store" }),
       );
@@ -570,7 +577,7 @@ export default function ProjectWorkspace() {
       for (const raw of d.projects) {
         const cloud = normalize({
           ...raw,
-          cloudOwner: account.id,
+          cloudOwner: owner.id,
           dirty: false,
         });
         const local = merged.find((x) => x.project.id === cloud.project.id);
@@ -590,10 +597,16 @@ export default function ProjectWorkspace() {
           cloud,
         ];
       }
+      // Loading referenced projects is a durability barrier for capacity plans too.
+      localStorage.setItem(key, JSON.stringify({ version: 1, projects: merged.map(normalize) }));
+      entriesRef.current = merged;
       setEntries(merged);
+      setSaved("Saved on this device");
       setNotice("Loaded account projects.");
+      return true;
     } catch (e) {
       setError(err(e));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -730,7 +743,7 @@ export default function ProjectWorkspace() {
         <header className="pw-topbar">
           <span>
             Workspace <span className="pw-slash">/</span>{" "}
-            {p ? "Project" : "Overview"}
+            {showCapacity ? "Shared capacity" : p ? "Project" : "Overview"}
           </span>
           <div>
             <span className="pw-save-state">
@@ -843,7 +856,16 @@ export default function ProjectWorkspace() {
               </div>
             </section>
           )}
-          {!p ? (
+          {showCapacity ? (
+            <CapacityWorkspace
+              projects={capacityProjects}
+              account={account}
+              onBack={() => setShowCapacity(false)}
+              onLoadProjects={async () => {
+                if (!(await loadCloud())) throw Error("Account project copies could not be loaded. Review the workspace error and try again.");
+              }}
+            />
+          ) : !p ? (
             <>
               <section className="pw-heading">
                 <div>
@@ -862,6 +884,14 @@ export default function ProjectWorkspace() {
                     client, project, or team.
                   </p>
                 </div>
+                <div className="pw-actions">
+                <button
+                  className="pw-button"
+                  disabled={!ready || blocked}
+                  onClick={() => { setSelected(null); setShowCapacity(true); setError(""); setNotice(""); }}
+                >
+                  <Clock3 size={18} /> Shared capacity
+                </button>
                 <button
                   className="pw-primary"
                   disabled={!ready || blocked}
@@ -873,6 +903,7 @@ export default function ProjectWorkspace() {
                   <Plus size={18} />
                   New project
                 </button>
+                </div>
               </section>
               <section
                 className="pw-audience-grid"

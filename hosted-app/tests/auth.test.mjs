@@ -5,6 +5,8 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {comparePlans,restorePlan} from '../lib/toolkit/planner.mjs';
 import {examplePlan} from '../lib/toolkit/workspace-catalog.mjs';
+import {createCapacityScenario} from '../lib/projects/commitments.mjs';
+import {makeCapacityAccountReport,parseCapacityAccountReports} from '../lib/projects/capacity-storage.mjs';
 const require=createRequire(import.meta.url),wr=createRequire(require.resolve('wrangler/package.json'));
 const {Miniflare}=wr('miniflare');
 const pass='a unique long passphrase 2026';
@@ -64,6 +66,27 @@ test('first-party authentication and private reports in the Worker/D1 runtime',a
   assert.ok((await call(null,alice.cookie,'/api/reports')).body.reports.some(r=>r.cloudId===saved.body.id));
   await call({id:saved.body.id},alice.cookie,'/api/reports','DELETE');
   assert.ok(!(await call(null,alice.cookie,'/api/reports')).body.reports.some(r=>r.cloudId===saved.body.id));
+ });
+ await t.test('capacity snapshots use private immutable reports without changing other tool readers',async()=>{
+  const iso='2026-10-17T10:00:00.000Z';
+  const config=createCapacityScenario([],{id:'c-account-fixture',title:'Private capacity fixture',days:2,hoursPerDay:4,projects:[{projectId:'private-project-reference',startDay:1,projectUpdatedAt:iso}]},iso);
+  const report=makeCapacityAccountReport({...config,derived:{privateSource:'MUST_NOT_RETAIN'}});
+  const ids=[];
+  try{
+   for(let i=0;i<2;i++){const saved=await call({report},alice.cookie,'/api/reports');assert.equal(saved.status,201);ids.push(saved.body.id);}
+   assert.notEqual(ids[0],ids[1]);
+   const input=examplePlan('student');const workflow=await call({report:{title:input.title,kind:'workflow-plan',tool:'workflow',input,result:comparePlans(input,25)}},alice.cookie,'/api/reports');assert.equal(workflow.status,201);ids.push(workflow.body.id);
+   const response=(await call(null,alice.cookie,'/api/reports')).body;
+   const parsed=parseCapacityAccountReports(response);assert.equal(parsed.snapshots.length,2);assert.equal(parsed.invalidCount,0);assert.deepEqual(parsed.snapshots[0].scenario,config);
+   assert.equal(JSON.stringify(parsed).includes('MUST_NOT_RETAIN'),false);
+   assert.equal(restorePlan(response.reports.find(r=>r.cloudId===workflow.body.id)).result.baseline.totalHours,18);
+   assert.ok(response.reports.some(r=>r.kind==='audit'&&r.title==='Private work'));
+   assert.equal(parseCapacityAccountReports((await call(null,bob.cookie,'/api/reports')).body).snapshots.length,0);
+   await call({id:ids[0]},bob.cookie,'/api/reports','DELETE');
+   assert.equal(parseCapacityAccountReports((await call(null,alice.cookie,'/api/reports')).body).snapshots.length,2);
+   await call({id:ids[0]},alice.cookie,'/api/reports','DELETE');
+   assert.equal(parseCapacityAccountReports((await call(null,alice.cookie,'/api/reports')).body).snapshots.length,1);
+  }finally{for(const id of ids)await call({id},alice.cookie,'/api/reports','DELETE');}
  });
  await t.test('generic reports cannot list, forge or delete managed projects, and quotas remain separate',async()=>{
   const managedId=crypto.randomUUID(),fixtureIds=Array.from({length:48},()=>crypto.randomUUID());
