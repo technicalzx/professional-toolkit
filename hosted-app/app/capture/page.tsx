@@ -150,7 +150,8 @@ export default function Capture() {
       sourceUrl: source,
       title,
       text,
-      headings: snapshot?.headings || [],
+      // Redacted headings must not survive invisibly in exports or saved reviews.
+      headings: snapshot && text === snapshot.text && title === snapshot.title ? snapshot.headings : [],
       capturedAt: snapshot?.capturedAt || new Date().toISOString(),
       captureMethod: snapshot?.captureMethod || "manual-snapshot",
       userEdited:
