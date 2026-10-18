@@ -57,7 +57,7 @@ Brief extraction uses explicit line rules; it does not infer a complete work bre
 
 Planning is a deterministic one-person heuristic, not an optimal team scheduler or a calendar integration. Estimates exclude platform fees, taxes, exchange rates and actual expenditure. Evidence and completion states are manual records; the application does not establish client approval, skill mastery, ranking, employment eligibility or business outcomes. Markdown formats adapt the presentation of the same project records; they do not add independently researched facts.
 
-Device storage is unencrypted and local to this browser origin. Export before switching origins/devices or clearing browser storage. Account synchronization requires the full backend and its deployment prerequisites. The client-only Cloudflare preview supports local workflows and exports, but does not enable accounts, remote URL fetching or AI. This release implements the project workflow described here; the broader research roadmap remains open.
+Device storage is unencrypted and local to this browser origin. Export before switching origins/devices or clearing browser storage. Account synchronization requires the full backend and its deployment prerequisites. The older guest-only Pages preview supports local workflows and exports, but does not enable accounts, remote URL fetching or AI. Full Worker Previews are separate backend environments with explicitly configured D1/AI bindings; see [build and Preview operations](../deployment/WORKERS_BUILDS.md). This release implements the project workflow described here; the broader research roadmap remains open.
 
 ## Contributor verification
 
