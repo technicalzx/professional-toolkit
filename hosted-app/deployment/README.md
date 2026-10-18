@@ -1,5 +1,7 @@
 # Direct customer-account Cloudflare build
 
+**Current live status (18 October 2026):** the full Worker and Chrome extension are deployed and live-tested. See [live deployment, setup, evidence and monitoring](LIVE_DEPLOYMENT.md). The dated blockers below are historical preparation notes, not the current live status.
+
 This target builds the same application with a plain Cloudflare/Vinext Worker entrypoint. Sites authentication and connector injection are omitted from this target. The original Sites target remains the default. Accounts in a new customer D1 database are separate from the current review site's users; no credentials/data are copied automatically.
 
 ## Confirmed implementation
@@ -8,7 +10,7 @@ This target builds the same application with a plain Cloudflare/Vinext Worker en
 - UI disables URL import for guests and explains sign-in/limits. Pasted content and calculators remain usable.
 - Direct Worker entrypoint is deployment/cloudflare-worker.ts. It does not depend on the Sites private access gate.
 
-## Deployment blockers — 13 October 2026
+## Deployment blockers â€” 13 October 2026
 - Connected Cloudflare account: Workers/D1 listing works; subscription listing returns API 10000 Authentication error. `default_usage_model=standard` does not prove Workers Free. No billing or subscription changes have been made.
 - Current server scrypt hashes: local Node CPU samples 211, 204 and 201 ms. These are local measurements, not production Cloudflare CPU measurements. Workers Free documents 10 ms per invocation; compatibility is not established and there is a material risk of login failure. Password security has not been weakened.
 - CLI is not logged in; account operations can use the connected plugin after permission/plan verification. Never paste tokens into chat or commit them.

@@ -1,0 +1,38 @@
+.pw-app .pwt-panel { display: grid; gap: 20px; min-width: 0; }
+.pw-app .pwt-panel .pw-alert, .pw-app .pwt-panel .pw-notice, .pw-app .pwt-panel .pw-section-head { margin: 0; }
+.pw-app .pwt-panel .pw-section-head { gap: 12px; flex-wrap: wrap; }
+.pw-app .pwt-import, .pw-app .pwt-preview, .pw-app .pwt-summary, .pw-app .pwt-log { display: grid; gap: 14px; min-width: 0; }
+.pw-app .pwt-field { display: grid; gap: 7px; min-width: 0; color: var(--pw-ink); font-size: 12px; font-weight: 600; }
+.pw-app .pwt-field input, .pw-app .pwt-field textarea, .pw-app .pwt-field select { min-width: 0; width: 100%; padding: 10px 12px; border: 1px solid var(--pw-border); border-radius: 7px; background: white; color: var(--pw-ink); }
+.pw-app .pwt-field textarea { resize: vertical; font-family: ui-monospace, Consolas, monospace; font-weight: 400; }
+.pw-app .pwt-field input[type=file] { border: 0; padding: 8px 0; }
+.pw-app .pwt-mapping { display: grid; gap: 14px; border-top: 1px solid var(--pw-border); padding-top: 20px; }
+.pw-app .pwt-mapping > button, .pw-app .pwt-preview > button { justify-self: start; }
+.pw-app .pwt-columns, .pw-app .pwt-task-mapping { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.pw-app .pwt-task-mapping > h4, .pw-app .pwt-task-mapping > p { grid-column: 1 / -1; }
+.pw-app .pwt-field > span { overflow-wrap: anywhere; }
+.pw-app .pwt-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.pw-app .pwt-metrics > div { min-width: 0; display: grid; gap: 6px; padding: 18px; border: 1px solid var(--pw-border); border-radius: 10px; background: white; }
+.pw-app .pwt-metrics span, .pw-app .pwt-metrics small { color: var(--pw-muted); font-size: 12px; overflow-wrap: anywhere; }
+.pw-app .pwt-metrics strong { color: var(--pw-ink); font-size: 23px; overflow-wrap: anywhere; }
+.pw-app .pwt-counts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.pw-app .pwt-counts > div { display: grid; gap: 3px; padding: 12px; background: #f4f7fc; border-radius: 7px; min-width: 0; }
+.pw-app .pwt-counts dt { color: var(--pw-muted); font-size: 12px; }
+.pw-app .pwt-counts dd { margin: 0; font-size: 22px; font-weight: 700; }
+.pw-app .pwt-check { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; }
+.pw-app .pwt-check input { margin: 5px 0 0; flex: 0 0 auto; }
+.pw-app .pwt-table-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--pw-border); border-radius: 8px; }
+.pw-app .pwt-table-wrap table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 12px; }
+.pw-app .pwt-table-wrap caption { text-align: left; color: var(--pw-muted); padding: 12px; background: #f8fafc; }
+.pw-app .pwt-table-wrap th, .pw-app .pwt-table-wrap td { padding: 11px 12px; border-top: 1px solid var(--pw-border); text-align: left; vertical-align: top; overflow-wrap: anywhere; max-width: 280px; }
+.pw-app .pwt-table-wrap thead th { color: var(--pw-muted); background: #f8fafc; font-weight: 600; }
+.pw-app .pwt-table-wrap p { margin-top: 6px; }
+.pw-app .pwt-badge { display: inline-block; border-radius: 5px; padding: 3px 6px; font-size: 11px; }
+.pw-app .pwt-ready { color: #21623e; background: #e9f6ee; }
+.pw-app .pwt-duplicate { color: #4c5f74; background: #edf1f6; }
+.pw-app .pwt-conflict, .pw-app .pwt-invalid, .pw-app .pwt-possible-duplicate { color: #78500b; background: #fff4d8; }
+.pw-app .pwt-warning { padding: 12px; border-left: 3px solid #d4a536; background: #fff9ea; color: #78500b; }
+.pw-app .pwt-id { display: block; margin-top: 5px; color: var(--pw-muted); font-size: 11px; overflow-wrap: anywhere; }
+.pw-app .pwt-note { color: var(--pw-muted); font-size: 12px; line-height: 1.7; }
+@media (max-width: 850px) { .pw-app .pwt-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pw-app .pwt-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .pw-app .pwt-columns, .pw-app .pwt-task-mapping { grid-template-columns: minmax(0, 1fr); } .pw-app .pwt-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pw-app .pwt-metrics > div { padding: 12px; } .pw-app .pwt-metrics strong { font-size: 20px; } }

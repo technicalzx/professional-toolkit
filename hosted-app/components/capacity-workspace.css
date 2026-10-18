@@ -1,0 +1,44 @@
+.pw-app .pwc-app { display: block; min-width: 0; }
+.pw-app .pwc-shell { max-width: 1240px; padding: 32px; margin: 0 auto; display: grid; gap: 24px; }
+.pw-app .pwc-heading { display: grid; gap: 10px; margin: 8px 0; }
+.pw-app .pwc-heading h1 { font-size: clamp(29px, 4vw, 46px); letter-spacing: -1.5px; line-height: 1.15; }
+.pw-app .pwc-layout { display: grid; grid-template-columns: minmax(220px,.6fr) minmax(0,2fr); gap: 24px; align-items: start; }
+.pw-app .pwc-library, .pw-app .pwc-editor, .pw-app .pwc-settings, .pw-app .pwc-projects, .pw-app .pwc-adjustments, .pw-app .pwc-results, .pw-app .pwc-account { display: grid; gap: 16px; min-width: 0; }
+.pw-app .pwc-library { padding: 20px; }
+.pw-app .pwc-library .pw-section-head { margin: 0; }
+.pw-app .pwc-library article { padding-top: 12px; border-top: 1px solid var(--pw-border); display: grid; gap: 8px; }
+.pw-app .pwc-library article > button:last-child { justify-self: start; }
+.pw-app .pwc-saved { text-align: left; color: var(--pw-ink); border: 1px solid var(--pw-border); background: white; border-radius: 7px; padding: 10px; overflow-wrap: anywhere; }
+.pw-app .pwc-saved[aria-pressed=true] { background: #eef3ff; border-color: #bacbff; }
+.pw-app .pwc-field { display: grid; gap: 7px; min-width: 0; font-weight: 600; font-size: 12px; color: var(--pw-ink); }
+.pw-app .pwc-field input { width: 100%; min-width: 0; border: 1px solid var(--pw-border); border-radius: 7px; padding: 10px 12px; background: white; color: var(--pw-ink); }
+.pw-app .pwc-field input[type=file] { padding: 8px 0; border: 0; font-size: 11px; }
+.pw-app .pwc-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+.pw-app .pwc-check { display: flex; align-items: start; gap: 10px; min-width: 0; }
+.pw-app .pwc-check input { margin-top: 5px; flex: 0 0 auto; }
+.pw-app .pwc-check span { min-width: 0; overflow-wrap: anywhere; }
+.pw-app .pwc-check small { display: block; color: var(--pw-muted); font-size: 11px; }
+.pw-app .pwc-projects article { display: grid; grid-template-columns: minmax(0,1fr) 150px; align-items: start; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--pw-border); }
+.pw-app .pwc-adjustments fieldset { min-width: 0; display: grid; gap: 12px; margin: 0; padding: 15px; border: 1px solid var(--pw-border); border-radius: 8px; }
+.pw-app .pwc-adjustments fieldset button, .pw-app .pwc-adjustments > button { justify-self: start; }
+.pw-app .pwc-warning { display: grid; gap: 10px; padding: 14px; border-left: 3px solid #d4a536; background: #fff9ea; color: #78500b; overflow-wrap: anywhere; }
+.pw-app .pwc-warning p { color: inherit; }
+.pw-app .pwc-warning > div { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.pw-app .pwc-note { font-size: 12px; color: var(--pw-muted); line-height: 1.7; }
+.pw-app .pwc-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.pw-app .pwc-metrics > div { display: grid; gap: 5px; background: #f5f8fd; padding: 15px; border-radius: 8px; min-width: 0; }
+.pw-app .pwc-metrics span { font-size: 12px; color: var(--pw-muted); }
+.pw-app .pwc-metrics strong { font-size: 25px; }
+.pw-app .pwc-table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--pw-border); border-radius: 8px; }
+.pw-app .pwc-table-wrap table { border-collapse: collapse; width: 100%; min-width: 650px; font-size: 12px; }
+.pw-app .pwc-table-wrap caption { text-align: left; padding: 12px; background: #f8fafc; color: var(--pw-muted); }
+.pw-app .pwc-table-wrap th, .pw-app .pwc-table-wrap td { border-top: 1px solid var(--pw-border); padding: 11px; text-align: left; vertical-align: top; max-width: 280px; overflow-wrap: anywhere; }
+.pw-app .pwc-table-wrap ul { margin: 0; padding-left: 16px; }
+.pw-app .pwc-id { display: block; margin-top: 5px; color: var(--pw-muted); font-size: 11px; }
+.pw-app .pwc-markdown { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; background: #f7f9fd; padding: 16px; border-radius: 8px; }
+.pw-app .pwc-account article { border-top: 1px solid var(--pw-border); padding-top: 14px; display: grid; gap: 10px; }
+@media(max-width:850px){.pw-app .pwc-layout { grid-template-columns: minmax(0,1fr); }.pw-app .pwc-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }.pw-app .pwc-shell { padding: 24px; }}
+@media(max-width:480px){.pw-app .pwc-shell { padding: 16px; gap: 18px; }.pw-app .pwc-projects article,.pw-app .pwc-fields { grid-template-columns: minmax(0,1fr); }.pw-app .pwc-metrics strong { font-size: 22px; }.pw-app .pwc-shell .pw-panel { padding: 17px; }}
+.pw-app .pwc-projects .pwc-check { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: flex-start; gap: 10px; }
+.pw-app .pwc-projects .pwc-check > input[type=checkbox] { width: 18px; min-width: 18px; max-width: 18px; height: 18px; flex: 0 0 18px; align-self: flex-start; margin: 5px 0 0; padding: 0; appearance: auto; accent-color: var(--pw-blue); }
+.pw-app .pwc-projects .pwc-check > span { flex: 1 1 auto; min-width: 0; }

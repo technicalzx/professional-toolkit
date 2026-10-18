@@ -25,9 +25,40 @@ jobs:
         working-directory: hosted-app
       - run: pnpm audit --prod --audit-level=high
         working-directory: hosted-app
-      - run: node --test tests/toolkit.test.mjs tests/extraction.test.mjs tests/auth.test.mjs
+      - run: node --test "tests/*.test.mjs"
         working-directory: hosted-app
       - run: node node_modules/typescript/bin/tsc --noEmit
         working-directory: hosted-app
       - run: npm run build
         working-directory: hosted-app
+        env:
+          TOOLKIT_DEPLOY_TARGET: cloudflare
+      - name: Build client preview
+        run: node node_modules/vite/bin/vite.js build --config preview/vite.config.ts
+        working-directory: hosted-app
+      - name: Package preview routes and assets
+        run: node preview/pack-worker.mjs
+        working-directory: hosted-app
+      - name: Verify preview routes and extension download
+        run: node preview/check-worker.mjs
+        working-directory: hosted-app
+      - name: Install isolated browser test runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/toolkit-browser" --ignore-scripts --no-audit --no-fund playwright@1.64.1
+          node "$RUNNER_TEMP/toolkit-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify complete project workflow in Chrome
+        working-directory: hosted-app
+        run: |
+          node node_modules/vite/bin/vite.js preview --config preview/vite.config.ts --host 127.0.0.1 --port 8791 --strictPort > "$RUNNER_TEMP/toolkit-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if node -e "fetch('http://127.0.0.1:8791').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then break; fi
+            sleep 1
+          done
+          export TOOLKIT_PLAYWRIGHT_MODULE="$RUNNER_TEMP/toolkit-browser/node_modules/playwright"
+          export TOOLKIT_PREVIEW_URL="http://127.0.0.1:8791"
+          node ../scripts/verify-project-browser.mjs
+          node ../scripts/verify-evidence-browser.mjs
+          node ../scripts/verify-time-browser.mjs
+          node ../scripts/verify-capacity-browser.mjs

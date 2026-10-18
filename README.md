@@ -1,26 +1,48 @@
 # Professional Toolkit
 
-**Current review release: v0.2.** The upgraded React/TypeScript application and URL importer are in [hosted-app](hosted-app/). See the [upgrade roadmap](hosted-app/docs/UPGRADE_PLAN.md) and [validation record](hosted-app/docs/VALIDATION.md).
+An open-source project workspace for freelancers, students and professionals: turn a brief into linked requirements, deliverables and tasks; record delivery evidence; compare scope changes; and reuse the results in a client review, portfolio or handover.
 
-The hosted review site is owner-private. Run the source locally using the contributor instructions below.
+The current React/TypeScript application is in [hosted-app](hosted-app/). Its root route opens connected projects; `/tools` retains the supporting utilities. Guest device saves and exports work immediately. Private account synchronization uses the full Worker/D1 backend. The client-only Cloudflare preview has separate capabilities; source changes do not update a hosted deployment automatically.
 
-The root Python app below is retained as the original local starter. The hosted application is the current review experience.
+## Connected project workspace
 
-An open-source workspace for freelancers, careers, personal branding and practical professional calculations, based on the owner's product brief.
+The root application connects briefs, requirements, deliverables, dependencies, evidence and scope changes for freelancers, students and professionals. Keep project records together, review the effects of revised scope, and export client-review, handover or portfolio drafts. Guest device storage and portable JSON exports are available; private account synchronization requires the full backend. See [project workspace capabilities and limitations](hosted-app/docs/PRODUCT_WORKSPACE.md).
+
+## Profile and website capture
+
+Open `/capture` to review a page snapshot. The [Chrome extension](extension/README.md) captures loaded profile/page text after a click, lets you redact it, and transfers it to your toolkit. Guest transfer, JSON snapshot import and local review work without an account. Private account saving, saved-review title sync and optional consented AI review require sign-in and their configured services. Download the developer ZIP from `/toolkit-capture-extension.zip` or `hosted-app/public/toolkit-capture-extension.zip`.
+
+See [capture setup and AI configuration](hosted-app/docs/CAPTURE.md) and [validation](reports/2026-10-16/CAPTURE_VALIDATION.md). No provider is enabled automatically. The extension is not yet a Chrome Web Store release; real platform layouts need owner acceptance testing.
+
+## Workflow development
+
+The new `/workflows` page connects requirements and evidence notes to dependent tasks, checks capacity and deadlines, and compares a higher-effort scenario. It includes three audience examples, editable plans, device save/restore/delete, account snapshots and JSON import/export. The main directory now groups tools by Freelancers, Students and Professionals with subcategory filtering.
+
+This is a deterministic one-person planning prototype, not an AI scheduler or the complete planned platform. Evidence references are user-provided and unverified. See the [research](reports/2026-10-16/RESEARCH.md), [architecture](reports/2026-10-16/ARCHITECTURE.md), [roadmap](reports/2026-10-16/ROADMAP.md) and [validation record](reports/2026-10-16/VALIDATION.md). Public deployment still requires the documented [hosting gates](hosted-app/deployment/README.md).
 
 ## Current milestone
 
-Working local development application: manually supplied LinkedIn/Upwork/Fiverr completeness audits, fee-aware freelance pricing, marks percentage, weighted GPA, tool search, favorites, saved result history, JSON export, copy, reset, dark mode and browser-data deletion.
+Implemented: three audience workflows; editable requirements and acceptance checks; evidence-gated delivery states; dependency-aware effort and capacity planning; recorded scope baselines and downstream change impact; client-review, portfolio and handover Markdown; multiple device projects; portable JSON; and private account storage with revision conflicts. Page capture and supporting utilities remain available alongside projects. **Shared capacity** on the project overview now compares selected projects against one availability pool, with start-day alignment, time-off overrides, private scenario snapshots and exports. It uses numbered planning days; dated calendars remain future work.
 
-This is the first implementation milestone, not the complete production SaaS described in the brief. No account authentication, live platform analytics, tax tables, currency feed, generative AI, billing or image processing is active. Profile scores explicitly measure supplied-field presence only.
+The production build and 85 automated checks passed during local release verification, followed by browser acceptance of the guest workflow and an isolated Worker/D1 account round trip. These are local validation results, not proof of a public deployment or the complete research roadmap. AI review still requires operator configuration; live platform analytics, billing, tax/currency feeds and wider integrations remain open work. See [capabilities, limits and verification](hosted-app/docs/PRODUCT_WORKSPACE.md).
 
 ## Run
 
-Python 3.10+; no third-party runtime dependencies.
+For the current application, use Node 24 and pnpm 11.25.0:
+
+```sh
+cd hosted-app
+pnpm install --frozen-lockfile --ignore-scripts
+npm run dev
+```
+
+Open the loopback address printed by the dev server (port 5173 by default). Account services need the configured local database and schema; guest project workflows remain usable without signing in. See [hosting prerequisites](hosted-app/deployment/README.md) before deploying the full backend.
+
+The original Python starter is retained for reference. It requires Python 3.10+ and no third-party runtime dependencies:
 
     python server.py
 
-Open http://127.0.0.1:8000 . Keep this development server on loopback. Do not expose it publicly. Inputs are processed by your local Python process; saved results use browser localStorage and are not encrypted. Avoid saving sensitive profiles on shared devices.
+The starter opens at http://127.0.0.1:8000 and does not contain the current connected project workspace. Device saves in both applications are browser-local and unencrypted; export a backup before switching origins or clearing browser storage.
 
 ## Test
 
@@ -44,7 +66,7 @@ The standard-library starter and the hosted application have separate checks:
 python -m unittest discover -s tests -v
 cd hosted-app
 pnpm install --frozen-lockfile --ignore-scripts
-node --test tests/toolkit.test.mjs tests/extraction.test.mjs tests/auth.test.mjs
+node --test "tests/*.test.mjs"
 node node_modules/typescript/bin/tsc --noEmit
 npm run build
 ```
@@ -54,3 +76,7 @@ Use Node 24 and pnpm 11.25.0, matching the package manager recorded in the hoste
 See the [dependency security review](hosted-app/docs/DEPENDENCY-SECURITY.md) for the
 patched framework versions and the remaining upstream advisory in development
 tooling. CI also checks production dependencies for high/critical advisories.
+
+## Live test deployment
+
+[Open Professional Toolkit](https://professional-toolkit.abihurairahansari.workers.dev) · [Download Chrome capture extension](https://professional-toolkit.abihurairahansari.workers.dev/toolkit-capture-extension.zip). Follow the [installation and live verification record](hosted-app/deployment/LIVE_DEPLOYMENT.md). This full backend supports private accounts; the older guest Pages preview is separate.
