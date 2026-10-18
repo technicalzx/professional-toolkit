@@ -20,6 +20,8 @@ jobs:
         with:
           node-version: '24'
       - run: python -m unittest discover -s tests -v
+      - name: Verify extension source and downloadable release agree
+        run: python scripts/package-extension.py --check
       - run: npm install --global pnpm@11.25.0 --ignore-scripts
       - run: pnpm install --frozen-lockfile --ignore-scripts
         working-directory: hosted-app
@@ -29,7 +31,7 @@ jobs:
         working-directory: hosted-app
       - run: node node_modules/typescript/bin/tsc --noEmit
         working-directory: hosted-app
-      - run: npm run build
+      - run: pnpm run build:cloudflare
         working-directory: hosted-app
         env:
           TOOLKIT_DEPLOY_TARGET: cloudflare
@@ -58,6 +60,7 @@ jobs:
           done
           export TOOLKIT_PLAYWRIGHT_MODULE="$RUNNER_TEMP/toolkit-browser/node_modules/playwright"
           export TOOLKIT_PREVIEW_URL="http://127.0.0.1:8791"
+          node ../scripts/verify-extension-download.mjs
           node ../scripts/verify-project-browser.mjs
           node ../scripts/verify-evidence-browser.mjs
           node ../scripts/verify-time-browser.mjs

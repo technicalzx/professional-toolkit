@@ -1,5 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+test('extension exposes the live help and updates guide without additional permissions',()=>{
+ const popup=fs.readFileSync(new URL('../../extension/popup.html',import.meta.url),'utf8');
+ assert.match(popup,/<a href="https:\/\/professional-toolkit\.abihurairahansari\.workers\.dev\/extension" target="_blank" rel="noopener noreferrer">Help &amp; updates<\/a>/);
+ const manifest=JSON.parse(fs.readFileSync(new URL('../../extension/manifest.json',import.meta.url),'utf8'));
+ assert.deepEqual(manifest.permissions,['activeTab','scripting','storage']);
+ assert.equal(manifest.host_permissions,undefined);assert.equal(manifest.background,undefined);
+});
 
 test('extension transfers an approved capture as a guest without reading account state',async()=>{
  const controls=new Map(),calls=[];

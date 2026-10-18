@@ -293,6 +293,10 @@ export default function Capture() {
           </button>
         </p>
       </header>
+      <p className="capture-extension-links">
+        <a className="primary account-link" href="/toolkit-capture-extension.zip" download>Download Chrome extension</a>{" "}
+        <a href="/extension">Install, update &amp; view source</a>
+      </p>
       <details className="card">
         <summary>Install and connect the Chrome extension</summary>
         <ol>
@@ -313,7 +317,7 @@ export default function Capture() {
           <li>
             Open your chosen profile or public page, expand the relevant
             sections, click Capture this page, review/redact the content, then
-            Open toolkit review.
+            Open profile feedback.
           </li>
         </ol>
         <p>

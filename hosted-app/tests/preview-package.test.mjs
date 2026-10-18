@@ -17,7 +17,7 @@ test('preview packaging serves every application route, preserves binary bytes a
   const source=pack();assert.equal(pack(),source,'Repacking must not include the generated Worker.');
   const worker=(await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'))).default;
   const get=(path,options)=>worker.fetch(new Request('https://preview.test'+path,options));
-  for(const path of ['/','/tools','/capture','/capture/','/workflows','/account']){const response=get(path);assert.equal(response.status,200,path);assert.equal(await response.text(),'<html>Toolkit fixture</html>');}
+  for(const path of ['/','/tools','/capture','/capture/','/extension','/extension/','/workflows','/account']){const response=get(path);assert.equal(response.status,200,path);assert.equal(await response.text(),'<html>Toolkit fixture</html>');}
   const asset=get('/assets/fixture.js');assert.equal(await asset.text(),'export const fixture=true;');assert.match(asset.headers.get('cache-control'),/immutable/);
   const download=get('/toolkit-capture-extension.zip');assert.equal(download.headers.get('content-type'),'application/zip');assert.deepEqual(Buffer.from(await download.arrayBuffer()),zip);
   const etag=download.headers.get('etag');assert.equal(get('/toolkit-capture-extension.zip',{headers:{'If-None-Match':etag}}).status,304);

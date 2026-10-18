@@ -10,7 +10,9 @@ The root application connects briefs, requirements, deliverables, dependencies, 
 
 ## Profile and website capture
 
-Open `/capture` to review a page snapshot. The [Chrome extension](extension/README.md) captures loaded profile/page text after a click, lets you redact it, and transfers it to your toolkit. Guest transfer, JSON snapshot import and local review work without an account. Private account saving, saved-review title sync and optional consented AI review require sign-in and their configured services. Download the developer ZIP from `/toolkit-capture-extension.zip` or `hosted-app/public/toolkit-capture-extension.zip`.
+Get the [Chrome extension and installation guide](https://professional-toolkit.abihurairahansari.workers.dev/extension), [download the ZIP](https://professional-toolkit.abihurairahansari.workers.dev/toolkit-capture-extension.zip), or inspect the [extension source and release notes](extension/README.md). The website's `/extension` page shows the current version, manual install/update steps, GitHub source and verifiable download metadata. The source lives in this repository's `extension/` directory; the packaged ZIP and `extension-release.json` live in `hosted-app/public/`.
+
+Open `/capture` to review a page snapshot. The extension captures loaded profile/page text after a click, lets you redact it, and transfers it to your toolkit. Guest transfer, JSON snapshot import and local review work without an account. Private account saving, saved-review title sync and optional consented AI review require sign-in and their configured services.
 
 See [capture setup and AI configuration](hosted-app/docs/CAPTURE.md) and [validation](reports/2026-10-16/CAPTURE_VALIDATION.md). No provider is enabled automatically. The extension is not yet a Chrome Web Store release; real platform layouts need owner acceptance testing.
 
