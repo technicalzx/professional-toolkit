@@ -8,11 +8,11 @@ The full Worker backend runs in the owner's account, separate from the older gue
 
 1. Download and extract the ZIP above.
 2. Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the extracted folder containing `manifest.json`.
-3. Open the live app and create/sign into an account. Extension 0.1.1 defaults to this live origin; existing installations can retain a prior saved origin, so replace it with the URL above if necessary.
+3. Open the live app and create/sign into an account. Extension 0.1.2 defaults to this live origin; existing installations can retain a prior saved origin, so replace it with the URL above if necessary.
 4. In the extension, click **Connect account** and grant access to that exact toolkit origin. On your source profile, expand the sections you want included, open the extension and choose **Capture this page**.
-5. Review/redact the captured text, enter your request, confirm transfer and select **Open toolkit review**. Run the local review and explicitly save privately. **Sync saved review titles** reopens your account's reviews.
+5. Review/redact the captured text, enter your request, confirm transfer and select **Open profile feedback**. On the website allow Cloudflare AI processing and click **Get AI profile feedback**. Review/edit the generated draft and explicitly save privately. **Sync saved review titles** reopens your account's reviews.
 
-This is a developer/unpacked extension, not a Chrome Web Store listing. It reads loaded page text after your click and does not fetch private profiles from a bare URL. Real authenticated LinkedIn, Fiverr and Upwork profile acceptance must be performed by the owner. The automated fixture uses a synthetic rendered LinkedIn page, not a real account or a provider API. Optional AI is not configured or charged by this deployment.
+This is a developer/unpacked extension, not a Chrome Web Store listing. It reads loaded page text after your click and does not fetch private profiles from a bare URL. Real authenticated LinkedIn, Fiverr and Upwork profile acceptance must be performed by the owner. The automated fixture uses a synthetic rendered LinkedIn page, not a real account or a provider API. Cloudflare AI is configured for consented, signed-in profile feedback. The shared launch limit is 20 attempts per UTC day. See [real-inference evidence and limits](../../reports/2026-10-18/PROFILE_FEEDBACK.md).
 
 ## Observed verification
 
@@ -34,6 +34,6 @@ The tail also showed 404 requests for a default favicon and a generated workflow
 
 ## Reproduce and roll back
 
-Use the pinned runtime/dependencies. Set `CLOUDFLARE_ACCOUNT_ID`, `TOOLKIT_DATABASE_ID` from live.json and `TOOLKIT_DEPLOY_TARGET=cloudflare`, then build with `node scripts/run-framework.mjs build`. Validate the generated config, run `wrangler deploy --dry-run --config dist/server/wrangler.json`, and deploy that config only after appropriate checks. Preserve this DB; do not rerun the initial CREATE schema over it. Future schema changes must be additive migrations. The database UUID/account ID are configuration identifiers, not credentials; OAuth stays in Wrangler's credential store.
+Use the pinned runtime/dependencies. Set `CLOUDFLARE_ACCOUNT_ID`, `TOOLKIT_DATABASE_ID` from live.json, `TOOLKIT_DEPLOY_TARGET=cloudflare` and `TOOLKIT_AI_MODEL=@cf/meta/llama-3.1-8b-instruct-fp8-fast`, then build with `node scripts/run-framework.mjs build`. Validate the generated config, run `wrangler deploy --dry-run --config dist/server/wrangler.json`, and deploy that config only after appropriate checks. Preserve this DB; do not rerun the initial CREATE schema over it. Future schema changes must be additive migrations. The database UUID/account ID are configuration identifiers, not credentials; OAuth stays in Wrangler's credential store.
 
 A Worker rollback changes application code, not saved data. Use the known prior version from deployment history only after considering record compatibility. Do not delete/recreate the database to roll back a UI or extension change. Older guest Pages URLs are not the live backend target.

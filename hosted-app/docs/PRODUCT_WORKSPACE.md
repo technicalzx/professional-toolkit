@@ -47,7 +47,7 @@ Save up to five device scenarios or import/export a validated configuration JSON
 
 Markdown exports omit raw sources, evidence/time notes and availability reasons. Configuration JSON and account snapshots include reviewed private override reasons; review titles, identifiers and reasons before sharing. Removing one device scenario or account snapshot does not change other copies. See [research and license decisions](../../reports/2026-10-17/SHARED_CAPACITY_RESEARCH.md) and [verification](../../reports/2026-10-17/SHARED_CAPACITY_VALIDATION.md).
 
-Capture does not automatically verify claims or ingest private platform data. Optional AI review still requires model configuration, consent and sign-in on the full backend.
+Capture does not automatically verify claims or ingest private platform data. The live backend now provides prompt-driven Cloudflare AI feedback, source-quoted findings, editable rewrites and next steps after sign-in and consent. Generated drafts and owner edits remain separate from supplied source facts. See [profile-feedback evidence and launch limits](../../reports/2026-10-18/PROFILE_FEEDBACK.md). Forks must explicitly configure the model binding.
 
 ## Bounds and limitations
 

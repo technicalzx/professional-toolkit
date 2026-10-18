@@ -32,3 +32,7 @@ Durable handoff for the five-hour schedule. Verify code and open PRs before usin
 ## Run discipline
 
 Finish active work and repair failures before adding another slice. Recheck PR #9 while open; after merge use the updated default branch. Separate coherent domain/API, UI/integration and independently useful documentation/repair commits when ready, keeping tests with behavior. Preserve unrelated edits, data, notices, real authorship and timestamps. Verify CI against the published SHA. Current authorization leaves merges and production release for owner review.
+
+## 18 October 2026: actionable profile feedback
+
+Owner feedback exposed that capture/basic checks did not satisfy custom-prompt profile improvement. The live backend now has configured fast Cloudflare inference, evidence-quoted feedback, editable rewrites/next steps, persistence and launch limits; extension 0.1.2 explains Fiverr buyer versus freelancer pages. [Real inference and failure evidence](../reports/2026-10-18/PROFILE_FEEDBACK.md). Prioritize owner acceptance of this corrected journey and source-faithful draft quality before adding unrelated project tools. Preserve explicit model configuration on redeployment; otherwise the previous missing-AI failure returns.
