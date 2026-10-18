@@ -76,3 +76,7 @@ Use Node 24 and pnpm 11.25.0, matching the package manager recorded in the hoste
 See the [dependency security review](hosted-app/docs/DEPENDENCY-SECURITY.md) for the
 patched framework versions and the remaining upstream advisory in development
 tooling. CI also checks production dependencies for high/critical advisories.
+
+## Live test deployment
+
+[Open Professional Toolkit](https://professional-toolkit.abihurairahansari.workers.dev) · [Download Chrome capture extension](https://professional-toolkit.abihurairahansari.workers.dev/toolkit-capture-extension.zip). Follow the [installation and live verification record](hosted-app/deployment/LIVE_DEPLOYMENT.md). This full backend supports private accounts; the older guest Pages preview is separate.
