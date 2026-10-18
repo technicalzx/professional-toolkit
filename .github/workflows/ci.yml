@@ -20,6 +20,8 @@ jobs:
         with:
           node-version: '24'
       - run: python -m unittest discover -s tests -v
+      - name: Verify extension source and downloadable release agree
+        run: python scripts/package-extension.py --check
       - run: npm install --global pnpm@11.25.0 --ignore-scripts
       - run: pnpm install --frozen-lockfile --ignore-scripts
         working-directory: hosted-app
