@@ -54,6 +54,7 @@ export default defineConfig(async ({ command }) => {
   if(process.env.TOOLKIT_DEPLOY_TARGET==='cloudflare')return {
     plugins:[vinext(),cloudflare({viteEnvironment:{name:'rsc',childEnvironments:['ssr']},inspectorPort:false,config:{
       ...(process.env.TOOLKIT_AI_MODEL?{ai:{binding:'AI'},vars:{TOOLKIT_AI_MODEL:process.env.TOOLKIT_AI_MODEL}}:{}),
+      observability:{enabled:true,logs:{enabled:true,invocation_logs:false,head_sampling_rate:1}},
       name:'professional-toolkit',main:'./deployment/cloudflare-worker.ts',compatibility_date:'2026-10-12',compatibility_flags:['nodejs_compat'],
       d1_databases:[{binding:'DB',database_name:'professional-toolkit',database_id:process.env.TOOLKIT_DATABASE_ID||SITE_CREATOR_PLACEHOLDER_DATABASE_ID}]
     }})]
