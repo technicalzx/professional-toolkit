@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {createRequire} from 'node:module';
 const captureRequire=createRequire(import.meta.url),wranglerRequire=createRequire(captureRequire.resolve('wrangler/package.json'));
-const {Miniflare}=wranglerRequire('miniflare');
+const {Miniflare,convertV4MiniflareOptions}=wranglerRequire('miniflare');
 test('capture API enforces consent, account ownership, grounded output and quotas',async()=>{
  const root=new URL('../',import.meta.url);
  const source=path=>fs.readFileSync(new URL(path,root),'utf8');
@@ -13,7 +13,7 @@ test('capture API enforces consent, account ownership, grounded output and quota
  let calls=0;
  const ai={async run(model,input){calls++;const request=JSON.parse(input.messages[1].content).request;if(request==='provider-error')throw Error('private provider details');if(request==='invalid-json')return {response:'not JSON'};return {response:JSON.stringify({summary:'Synthetic fixture review',findings:[{quote:request==='bad-quotes'?'invented quote':'I help clients build reliable cloud systems.',observation:'A service statement is present.',recommendation:'Add a specific audience.'}],missingInformation:['Project evidence.'],improvedDraft:request==='bad-claim'?'Expert cloud systems builder':request==='no-draft'?undefined:'Cloud systems builder — [add truthful specialty].',nextSteps:['Add your target audience.','Link a relevant project.']})};}};
  export default {fetch(r,e){const p=new URL(r.url).pathname;if(p==='/calls')return Response.json({calls});if(p==='/api/account')return account(r,e.DB);if(p==='/api/reports')return reportStore(r,e.DB);return reviewCapture(r,e.DB,p==='/unconfigured'?null:ai,'test-model');}};`;
- const mf=new Miniflare({modules:[{type:'ESModule',path:'index.mjs',contents:entry},...['lib/auth/service.mjs','lib/capture/snapshot.mjs','lib/capture/service.mjs'].map(path=>({type:'ESModule',path,contents:source(path)}))],compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']});
+ const mf=new Miniflare(convertV4MiniflareOptions({modules:[{type:'ESModule',path:'index.mjs',contents:entry},...['lib/auth/service.mjs','lib/capture/snapshot.mjs','lib/capture/service.mjs'].map(path=>({type:'ESModule',path,contents:source(path)}))],compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']}));
  try{
  const db=await mf.getD1Database('DB');for(const q of source('drizzle/0000_swift_wendigo.sql').split('--> statement-breakpoint').map(x=>x.trim()).filter(Boolean))await db.prepare(q).run();
  const call=async(path,data,cookie='',origin='https://toolkit.test')=>{const r=await mf.dispatchFetch('https://toolkit.test'+path,{method:data?'POST':'GET',headers:{origin,'content-type':'application/json',cookie},...(data?{body:JSON.stringify(data)}:{})});return {status:r.status,body:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]};};

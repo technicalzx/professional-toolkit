@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {createProject,addProjectSource,linkProjectEvidence,reviseProjectSource,removeProjectSource} from '../lib/projects/engine.mjs';
 
 const require=createRequire(import.meta.url),wranglerRequire=createRequire(require.resolve('wrangler/package.json'));
-const {Miniflare}=wranglerRequire('miniflare');
+const {Miniflare,convertV4MiniflareOptions}=wranglerRequire('miniflare');
 
 test('project account storage enforces ownership, revision concurrency and bounded private persistence',async t=>{
   const root=new URL('../',import.meta.url);
@@ -14,7 +14,7 @@ test('project account storage enforces ownership, revision concurrency and bound
   const entry=`import {account,reportStore} from './lib/auth/service.mjs';
 import {projectStore} from './lib/projects/store.mjs';
 export default {fetch(r,e){const p=new URL(r.url).pathname;return p==='/api/account'?account(r,e.DB):p==='/api/reports'?reportStore(r,e.DB):projectStore(r,e.DB)}};`;
-  const mf=new Miniflare({modules:[{type:'ESModule',path:'index.mjs',contents:entry},...['lib/auth/service.mjs','lib/projects/store.mjs','lib/projects/engine.mjs','lib/projects/evidence.mjs','lib/projects/workspace-evidence.mjs','lib/projects/time-logs.mjs','lib/capture/snapshot.mjs','lib/toolkit/planner.mjs'].map(path=>({type:'ESModule',path,contents:source(path)}))],compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']});
+  const mf=new Miniflare(convertV4MiniflareOptions({modules:[{type:'ESModule',path:'index.mjs',contents:entry},...['lib/auth/service.mjs','lib/projects/store.mjs','lib/projects/engine.mjs','lib/projects/evidence.mjs','lib/projects/workspace-evidence.mjs','lib/projects/time-logs.mjs','lib/capture/snapshot.mjs','lib/toolkit/planner.mjs'].map(path=>({type:'ESModule',path,contents:source(path)}))],compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']}));
   try{
     const db=await mf.getD1Database('DB');
     for(const query of source('drizzle/0000_swift_wendigo.sql').split('--> statement-breakpoint').map(x=>x.trim()).filter(Boolean))await db.prepare(query).run();

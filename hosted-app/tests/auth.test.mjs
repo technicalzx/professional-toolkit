@@ -8,11 +8,11 @@ import {examplePlan} from '../lib/toolkit/workspace-catalog.mjs';
 import {createCapacityScenario} from '../lib/projects/commitments.mjs';
 import {makeCapacityAccountReport,parseCapacityAccountReports} from '../lib/projects/capacity-storage.mjs';
 const require=createRequire(import.meta.url),wr=createRequire(require.resolve('wrangler/package.json'));
-const {Miniflare}=wr('miniflare');
+const {Miniflare,convertV4MiniflareOptions}=wr('miniflare');
 const pass='a unique long passphrase 2026';
 test('first-party authentication and private reports in the Worker/D1 runtime',async t=>{
  const source=fs.readFileSync(new URL('../lib/auth/service.mjs',import.meta.url),'utf8');
- const mf=new Miniflare({modules:true,script:source+'\nexport default {fetch(r,e){if(new URL(r.url).pathname==="/api/import")return authorizeImport(r,e.DB).then(x=>x||Response.json({ok:true}));return new URL(r.url).pathname==="/api/reports"?reportStore(r,e.DB):account(r,e.DB)}}',compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']});
+ const mf=new Miniflare(convertV4MiniflareOptions({modules:true,script:source+'\nexport default {fetch(r,e){if(new URL(r.url).pathname==="/api/import")return authorizeImport(r,e.DB).then(x=>x||Response.json({ok:true}));return new URL(r.url).pathname==="/api/reports"?reportStore(r,e.DB):account(r,e.DB)}}',compatibilityDate:'2026-05-15',compatibilityFlags:['nodejs_compat'],d1Databases:['DB']}));
  try{
  const db=await mf.getD1Database('DB');
  const sql=fs.readFileSync(new URL('../drizzle/0000_swift_wendigo.sql',import.meta.url),'utf8');
