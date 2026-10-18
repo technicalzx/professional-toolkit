@@ -4,10 +4,10 @@ Capture one page you choose, inspect/edit its text, and transfer a versioned JSO
 
 ## Install
 
-1. Extract `hosted-app/public/toolkit-capture-extension.zip`, or use this repository's `extension/` folder directly.
+1. Download the [live extension ZIP](https://professional-toolkit.abihurairahansari.workers.dev/toolkit-capture-extension.zip) and extract it, or use this repository's `extension/` folder directly.
 2. In Chrome, open `chrome://extensions`, enable Developer mode, click **Load unpacked**, and select the folder containing manifest.json.
-3. Open the toolkit website. Guest capture transfer, local review and JSON export work without signing in.
-4. Open the extension and enter the toolkit origin (for example `https://toolkit.example` or local `http://127.0.0.1:8790`). Transfer asks for permission for that exact origin. Optionally use **Connect account** for private saving and saved-review title sync on a backend-enabled deployment; if sign-in opens, sign in there and connect again.
+3. Open [the live toolkit](https://professional-toolkit.abihurairahansari.workers.dev). Guest capture transfer, local review and JSON export work without signing in.
+4. The extension defaults to `https://professional-toolkit.abihurairahansari.workers.dev`. Open it and confirm this origin, or enter another toolkit origin (for example `https://toolkit.example` or local `http://127.0.0.1:8790`). Transfer asks for permission for that exact origin. Optionally use **Connect account** for private saving and saved-review title sync on a backend-enabled deployment; if sign-in opens, sign in there and connect again.
 5. On the source profile, expand/load sections you want included. Click the extension, then **Capture this page**. Inspect and redact the preview, enter a review request, confirm transfer and click **Open toolkit review**.
 6. The website opens `/capture` with the snapshot. Run local review or explicitly consent to an operator-configured AI model. Click **Save privately to account** to sync the reviewed result. In the extension, **Sync saved review titles** retrieves up to five recent saved reviews for reopening.
 

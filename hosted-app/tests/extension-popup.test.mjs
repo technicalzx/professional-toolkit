@@ -15,7 +15,8 @@ test('extension transfers an approved capture as a guest without reading account
  };
  try{
   await import('../../extension/popup.mjs');
-  assert.equal(element('origin').value,'http://127.0.0.1:8790');
+  assert.equal(element('origin').value,'https://professional-toolkit.abihurairahansari.workers.dev');
+  element('origin').value='http://127.0.0.1:8790';
   await element('capture').onclick();
   element('prompt').value='Review the supplied evidence.';element('consent').checked=true;
   await element('send').onclick();
