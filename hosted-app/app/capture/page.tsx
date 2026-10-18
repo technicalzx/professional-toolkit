@@ -273,8 +273,8 @@ export default function Capture() {
         ← Workspace & saved reports
       </a>
       <header className="account-heading">
-        <span className="eyebrow">PROFILE & WEBSITE CAPTURE</span>
-        <h1>Review the page you can see.</h1>
+        <span className="eyebrow">PROFILE FEEDBACK & REWRITING</span>
+        <h1>Get feedback that improves your profile.</h1>
         <p>
           Use the Chrome extension on your chosen page, import its JSON
           snapshot, or enter content below. LinkedIn, Upwork and Fiverr do not
@@ -439,6 +439,31 @@ export default function Capture() {
             Clear content
           </button>
         </div>
+        <label className="capture-consent">
+          <input
+            type="checkbox"
+            checked={consent}
+            disabled={busy}
+            onChange={(e) => setConsent(e.target.checked)}
+          />
+          <span>
+            Allow this selected snapshot and request to be sent to the
+            Cloudflare AI model to answer my request and suggest profile improvements.
+          </span>
+        </label>
+        <button
+          className="primary"
+          disabled={busy || !consent || !user}
+          onClick={reviewAI}
+        >
+          {busy ? "Processing…" : "Get AI profile feedback"}
+        </button>
+        <p className="sync-note">
+          Sign in, review the captured text, allow AI processing above and choose Get AI profile feedback.
+          You receive an answer to your request, specific improvements, a rewritten draft and next steps.
+          AI accepts up to 12 KB of selected text; the shared launch limit is 20 attempts per UTC day.
+          Save privately only when you choose. Basic text checks remain available without AI.
+        </p>
         <section className="capture-project-transfer">
           <h2>Use this source in your work</h2>
           <p>
@@ -454,30 +479,6 @@ export default function Capture() {
             Use reviewed snapshot in a project
           </button>
         </section>
-        <label className="capture-consent">
-          <input
-            type="checkbox"
-            checked={consent}
-            disabled={busy}
-            onChange={(e) => setConsent(e.target.checked)}
-          />
-          <span>
-            Allow this selected snapshot and request to be sent to the
-            operator-configured AI model for this review.
-          </span>
-        </label>
-        <button
-          className="secondary"
-          disabled={busy || !consent || !user}
-          onClick={reviewAI}
-        >
-          {busy ? "Processing…" : "Ask AI to answer my request"}
-        </button>
-        <p className="sync-note">
-          AI review requires sign-in and operator model configuration. It may
-          consume provider usage. Local review works without it. Account sync
-          happens only when you choose Save.
-        </p>
       </section>
       {report && (
         <section className="card workflow-results">
@@ -516,7 +517,11 @@ export default function Capture() {
             </>
           ) : (
             <>
+              <h3>Answer to your request</h3>
               <p>{report.summary}</p>
+              {report.improvedDraft && <section className="recommendation"><h3>Suggested profile rewrite</h3><label className="field"><span>Edit your improved draft</span><textarea rows={9} maxLength={2200} value={report.improvedDraft} onChange={e=>setReport({...report,improvedDraft:e.target.value || "[Write your revised profile here]",draftEdited:true})}/></label><button className="secondary" onClick={async()=>{try{await navigator.clipboard.writeText(report.improvedDraft);setNotice("Improved draft copied.");}catch{setError("Clipboard unavailable. Select the draft or download the review.");}}}>Copy improved draft</button><p>{report.draftEdited?"AI-generated draft with your edits. Check every claim before publishing.":"AI-generated draft. Check every claim before publishing."}</p></section>}
+              {report.nextSteps?.length>0 && <section><h3>Your next steps</h3><ol>{report.nextSteps.map((step:string,i:number)=><li key={i}>{step}</li>)}</ol></section>}
+              <h3>What to improve and why</h3>
               {report.findings.map(
                 (
                   f: {

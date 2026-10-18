@@ -174,7 +174,10 @@ export async function authorizeImport(request,db){
 export async function authorizeReview(request,db){
  try{
   const user=await currentUser(request,db);if(!user)fail('Sign in to request AI review.',401);
-  await rate(db,`review-user:${user.id}`,5);await rate(db,'review-global',100);
+  await rate(db,`review-user:${user.id}`,5);await rate(db,'review-global',20);
+    const day=Math.floor(now()/86400),key=sha(`review-day:${day}`);
+    const row=await stmt(db,'INSERT INTO auth_limits (key,count,expires) VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET count=count+1 RETURNING count',key,(day+1)*86400).first();
+    if(row.count>20)fail('The shared AI review limit of 20 attempts today is reached. Try after the next UTC day; your captured text is retained.',429);
   return null;
  }catch(e){if(e instanceof AuthError)return json({error:e.message},e.status);return json({error:'Review quota storage is unavailable.'},503)}
 }

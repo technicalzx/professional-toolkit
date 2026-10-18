@@ -49,5 +49,8 @@ export function restoreCapturedReview(value) {
   const summary=bounded(value.summary,'Review summary',1,2500);
   if(!Array.isArray(value.findings)||value.findings.length>6||!Array.isArray(value.missingInformation)||value.missingInformation.length>10)throw Error('Invalid saved findings.');
   const findings=value.findings.map(f=>{const quote=bounded(f?.quote,'Source quote',1,600);if(!source.text.includes(quote))throw Error('A review quote is absent from its source.');return {quote,observation:bounded(f.observation,'Observation',1,1000),recommendation:bounded(f.recommendation,'Recommendation',1,1000)};});
-  return {kind:'captured-review',title:`${source.platform} · ${source.title}`.slice(0,200),mode:'ai',source,request,summary,findings,missingInformation:value.missingInformation.map(s=>bounded(s,'Missing information',1,500)),createdAt:typeof value.createdAt==='string'?value.createdAt:'',explanation:'Saved AI-generated suggestions. Source quotes are checked; observations and claims still require your review.'};
+  const improvedDraft=value.improvedDraft===undefined?undefined:bounded(value.improvedDraft,'Improved draft',1,2200);
+  if(value.nextSteps!==undefined&&(!Array.isArray(value.nextSteps)||value.nextSteps.length>5))throw Error('Invalid next steps.');
+  const nextSteps=value.nextSteps?.map(s=>bounded(s,'Next step',1,350));
+  return {kind:'captured-review',title:`${source.platform} · ${source.title}`.slice(0,200),mode:'ai',source,request,summary,findings,...(typeof value.model==='string'?{model:bounded(value.model,'Model',1,200)}:{}),...(improvedDraft?{improvedDraft,draftEdited:value.draftEdited===true}:{}),...(nextSteps?{nextSteps}:{}),missingInformation:value.missingInformation.map(s=>bounded(s,'Missing information',1,500)),createdAt:typeof value.createdAt==='string'?value.createdAt:'',explanation:'Saved AI-generated suggestions. Source quotes are checked; observations and claims still require your review.'};
 }

@@ -41,3 +41,17 @@ test('extension package has least-privilege manifest and identical snapshot cont
  assert.equal(manifest.manifest_version,3);assert.deepEqual(manifest.permissions,['activeTab','scripting','storage']);assert.equal(manifest.host_permissions,undefined);assert.equal(manifest.content_scripts,undefined);
  assert.equal(fs.readFileSync(new URL('../../extension/snapshot.mjs',import.meta.url),'utf8'),fs.readFileSync(new URL('../lib/capture/snapshot.mjs',import.meta.url),'utf8'));
 });
+
+
+test('Fiverr buyer pages are rejected before reading DOM content',async()=>{
+ const {capturePage}=await import('../../extension/capture-page.mjs');const previous=globalThis.location;
+ try{globalThis.location={href:'https://www.fiverr.com/synthetic-fixture/buying?source=profile'};assert.throws(()=>capturePage(),/buyer\/client profile.*freelancer profile/);}
+ finally{if(previous===undefined)delete globalThis.location;else globalThis.location=previous;}
+});
+test('AI drafts and next steps survive restoration; old reviews remain compatible',()=>{
+ const source={schemaVersion:1,sourceUrl:'https://www.fiverr.com/synthetic-profile',title:'Synthetic profile',text:'I build reliable cloud infrastructure and document delivery. My portfolio contains cloud deployment examples and testing notes.',headings:[],capturedAt:'2026-10-18T00:00:00.000Z',captureMethod:'browser-capture'};
+ const report={kind:'captured-review',mode:'ai',source,request:'Rewrite my headline.',summary:'Clarify your specialization.',findings:[{quote:'I build reliable cloud infrastructure',observation:'Your offer is broad.',recommendation:'Name the infrastructure specialty.'}],missingInformation:[],improvedDraft:'Cloud infrastructure builder | Documented deployments',nextSteps:['Add one truthful specialist example.']};
+ const restored=restoreCapturedReview(JSON.parse(JSON.stringify(report)));assert.equal(restored.improvedDraft,report.improvedDraft);assert.deepEqual(restored.nextSteps,report.nextSteps);
+ assert.throws(()=>restoreCapturedReview({...report,improvedDraft:'x'.repeat(2201)}));assert.throws(()=>restoreCapturedReview({...report,nextSteps:['x'.repeat(351)]}));
+ const old={...report};delete old.improvedDraft;delete old.nextSteps;assert.equal(restoreCapturedReview(old).mode,'ai');
+});

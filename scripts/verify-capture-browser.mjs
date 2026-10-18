@@ -20,7 +20,7 @@ try{
  if(process.env.TOOLKIT_PREVIEW_URL){
   await page.unroute('**/*');
   const base=process.env.TOOLKIT_PREVIEW_URL;
-  await page.goto(base+'/capture');await page.getByRole('heading',{name:'Review the page you can see.'}).waitFor();
+  await page.goto(base+'/capture');await page.getByRole('heading',{name:'Get feedback that improves your profile.'}).waitFor();
   await page.getByLabel('Source page URL').fill('https://www.linkedin.com/in/synthetic-fixture');await page.getByLabel('Page/profile title').fill('Fixture Cloud Engineer');
   await page.getByLabel('Review and redact snapshot content').fill('I help clients build reliable cloud systems. I delivered 12 projects and have 4 years of experience. View my portfolio and message me for details.');
   await page.getByRole('button',{name:'Run local review',exact:true}).click();await page.getByRole('heading',{name:'Observed text checks'}).waitFor();

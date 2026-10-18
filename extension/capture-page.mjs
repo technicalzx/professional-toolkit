@@ -4,6 +4,7 @@ export function capturePage() {
   if(url.protocol!=='https:')throw Error('Open a public HTTPS profile or website page.');
   const is=domain=>host===domain||host.endsWith('.'+domain);
   if((is('linkedin.com')&&!url.pathname.startsWith('/in/'))||(is('upwork.com')&&!/^\/(freelancers|jobs)\//.test(url.pathname))||(is('fiverr.com')&&/^\/(inbox|users|settings|dashboard|orders|login|join|billing|payments)(\/|$)/i.test(url.pathname))||/\/(messages|inbox|billing|payments|settings|login|signin)(\/|$)/i.test(url.pathname))throw Error('Open a profile, gig, job or public content page, not messages, account settings or payments.');
+  if(is('fiverr.com')&&/\/buying(?:\/|$)/i.test(url.pathname))throw Error("This is Fiverr's buyer/client profile. Click the freelancer profile link on Fiverr, or open a public gig, then capture again.");
   const platform=is('linkedin.com')?'linkedin':is('upwork.com')?'upwork':is('fiverr.com')?'fiverr':'website';
   const root=document.querySelector('main,[role="main"]')||document.body;
   if(!root)throw Error('The page has not loaded.');

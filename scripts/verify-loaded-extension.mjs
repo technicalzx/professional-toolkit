@@ -23,7 +23,7 @@ try{
  const account=await page.evaluate(async()=>{const r=await fetch('/api/account');return (await r.json()).user?.username;});assert.equal(account,username,'Browser session cookie must work');
  const browser=context.browser(),cdp=await browser.newBrowserCDPSession();
  await cdp.send('Extensions.loadUnpacked',{path:extension});const {extensions}=await cdp.send('Extensions.getExtensions');const loaded=extensions.find(e=>e.name==='Professional Toolkit Capture');assert.ok(loaded,'Packaged extension must load');
- const popup=await context.newPage();await popup.goto(`chrome-extension://${loaded.id}/popup.html`);await popup.getByLabel('Toolkit website origin').fill(base);
+ const popup=await context.newPage();await popup.goto(`chrome-extension://${loaded.id}/popup.html`);await popup.getByText('Account connection & saved reviews',{exact:true}).click();await popup.getByLabel('Toolkit website origin').fill(base);
  await popup.getByRole('button',{name:'Connect account',exact:true}).click();await popup.getByText(`Connected to @${username}`,{exact:false}).waitFor();
  const source=await context.newPage();await source.route('https://www.linkedin.com/**',route=>route.fulfill({contentType:'text/html',body:'<html><head><title>Fixture profile</title></head><body><main><h1>Fixture Cloud Engineer</h1><p>I help clients build reliable cloud systems. I delivered 12 projects with an auditable testing process. Message me for a portfolio and an engineering consultation.</p><input type="password" value="NOT_CAPTURED"></main></body></html>'}));
  await source.goto('https://www.linkedin.com/in/synthetic-extension-fixture');
