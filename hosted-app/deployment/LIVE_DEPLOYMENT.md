@@ -6,6 +6,12 @@ Latest release: extension 0.1.3 and the discoverable download/install/update jou
 
 The full Worker backend runs in the owner's account, separate from the older guest-only Pages preview. Exact public resource IDs, source revision, deployed version and ZIP digest are in [live.json](live.json). Both connected Cloudflare MCP providers now reach this hosting account, including Workers Builds configuration and sanitized build-log access. Wrangler OAuth remains available for deployment operations; its earlier CI 403 does not describe the current MCP access. No subscription, paid upgrade, AI credits, DNS record or existing production database was changed. The production database was initialized empty during the original deployment. The later build repair created and initialized a separate Preview database from the existing schema; see [Worker Previews repair and acceptance](../../reports/2026-10-18/WORKERS_BUILDS_REPAIR.md). Local preview users are not automatically migrated; create a live account and explicitly import/export records you wish to move.
 
+## Source update awaiting production approval
+
+On 19 October 2026, extension **0.1.4** and the compatible website redaction repair passed isolated local and full Cloudflare Worker Preview acceptance in [PR #13](https://github.com/technicalzx/professional-toolkit/pull/13). It locks approved transfer inputs while work is pending, renews approval after edits, and removes hidden original headings after title/body redaction. See [observed verification](../../reports/2026-10-19/CAPTURE_APPROVAL_VALIDATION.md).
+
+Production remains extension **0.1.3**, Worker version `f5b88a6f-6720-4b5e-bbbd-077ba097241a`. The new source/package is **not** a production release; the owner's recurring-release rule requires separate approval before publishing. Until then, compare live downloads with `deployment/live.json` and Preview downloads with the new source release metadata. A newer repository package alone is not evidence that the live site updated. Unpacked installations still need manual Reload after an approved update.
+
 ## Chrome setup
 
 1. Download and extract the ZIP above.
@@ -22,7 +28,7 @@ This is a developer/unpacked extension, not a Chrome Web Store listing. It reads
 - Live Chrome project, evidence/capture and time-log guest regressions pass. Live capacity regression passes with account registration, private project/scenario saves, reload, failed-device-storage recovery and mobile keyboard checks.
 - Actual loaded Chrome extension: account connection, activeTab capture, packaged handoff to the live website, private save and saved-title sync all pass. The final live ZIP matches the tested release package byte for byte. Runtime host permission is pre-granted only in a temporary test manifest; actual owner permission prompts remain manual acceptance.
 - Each live synthetic account is deleted before PASS. A separate read-only remote count found users=0, reports=0 and sessions=0 after testing. No real profile records or credentials are stored in these reports.
-- Final deployed version is recorded in live.json. PR #9 and the merge-rule update #10 have since merged. Extension distribution is reviewed in PR #11, with independently useful packaging and website commits; CI and merge status are checked separately against the exact final pushed SHA. The owner now permits reviewed, passing PR merges that preserve individual commits; future production releases retain their separate authorization boundary.
+- Final deployed version is recorded in live.json. PR #9 and the merge-rule update #10 have since merged. PR #11 merged with commit bc84633 after exact-head checks passed, preserving its seven individual owner-attributed commits. Subsequent source/Preview updates have separate release records and do not change this production version. The owner now permits reviewed, passing PR merges that preserve individual commits; future production releases retain their separate authorization boundary.
 
 ## Logs and performance
 

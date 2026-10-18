@@ -95,7 +95,8 @@ try{
  assert.equal(JSON.stringify(savedReview).includes('SYNTHETIC_HEADING_MARKER'),false,'Reviewed/exported source must not retain redacted heading text.');
  await popup.getByRole('button',{name:'Sync saved review titles'}).click();await popup.locator('#reviews button').first().waitFor();assert.ok((await popup.locator('#reviews').innerText()).includes('Fixture Cloud Engineer'));
 }finally{
- await releaseDestination();
+ try{await releaseDestination();}finally{
  try{if(fixtureCreated){const cleanup=await context.newPage();await cleanup.goto(base+'/account');const status=await cleanup.evaluate(async()=>(await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',currentPassword:'synthetic extension test passphrase 2026'})})).status);assert.equal(status,200,'Own synthetic account must be deleted before PASS.');}}finally{await context.close();}
+ }
 }
 console.log('PASS: loaded extension actual popup capture/send, fresh request/recipient approval, delayed-transfer input locking, redacted handoff, account connection, private save and saved-title sync; own synthetic account deleted. Exact toolkit origin permission is pre-granted only in the isolated fixture; real profiles and permission prompts need owner acceptance.');
