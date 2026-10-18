@@ -718,6 +718,10 @@ export default function ProjectWorkspace() {
             <Link2 size={18} />
             Profile & page capture
           </a>
+          <a href="/extension">
+            <Download size={18} />
+            Chrome extension
+          </a>
           <a href="/tools">
             <Settings2 size={18} />
             Supporting tools
@@ -764,6 +768,7 @@ export default function ProjectWorkspace() {
           <nav className="pw-mobile-nav" aria-label="Mobile navigation">
             <a href="/">Projects</a>
             <a href="/capture">Profile capture</a>
+            <a href="/extension">Extension</a>
             <a href="/tools">Tools</a>
             <a href="/account">Account</a>
           </nav>

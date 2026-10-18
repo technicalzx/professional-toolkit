@@ -1336,6 +1336,7 @@
 @media (max-width: 650px) {
   .pw-mobile-nav {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 10px;
     padding-bottom: 20px;

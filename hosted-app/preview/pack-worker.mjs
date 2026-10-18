@@ -17,7 +17,7 @@ function visit(dir){
 }
 visit(root);
 const code=`const assets=${JSON.stringify(assets)};
-const routes=new Set(['/','/tools','/capture','/workflows','/account']);
+const routes=new Set(['/','/tools','/capture','/extension','/workflows','/account']);
 export default {fetch(request){
 const path=new URL(request.url).pathname;
 const headers={'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"};
