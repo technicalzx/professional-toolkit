@@ -50,6 +50,11 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/toolkit-browser" --ignore-scripts --no-audit --no-fund playwright@1.64.1
           node "$RUNNER_TEMP/toolkit-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify failed-feedback recovery with an isolated backend
+        timeout-minutes: 5
+        env:
+          TOOLKIT_PLAYWRIGHT_MODULE: ${{ runner.temp }}/toolkit-browser/node_modules/playwright
+        run: node scripts/run-capture-recovery.mjs
       - name: Verify complete project workflow in Chrome
         working-directory: hosted-app
         run: |
