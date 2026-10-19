@@ -10,6 +10,8 @@ The full Worker backend runs in the owner's account, separate from the older gue
 
 On 19 October 2026, extension **0.1.4** and the compatible website redaction repair passed isolated local and full Cloudflare Worker Preview acceptance in [PR #13](https://github.com/technicalzx/professional-toolkit/pull/13). It locks approved transfer inputs while work is pending, renews approval after edits, and removes hidden original headings after title/body redaction. See [observed verification](../../reports/2026-10-19/CAPTURE_APPROVAL_VALIDATION.md).
 
+The subsequent [PR #15](https://github.com/technicalzx/professional-toolkit/pull/15) adds website recovery for failed replacement profile feedback: the previous review and user-edited draft remain available for export/private saving after a failed attempt. It keeps extension package0.1.4 and the existing snapshot/report contract. [Recovery research and validation](../../reports/2026-10-19/FEEDBACK_RECOVERY_VALIDATION.md) distinguish local browser acceptance, isolated Cloudflare Preview checks and final CI/merge results. This website change also awaits separate production approval.
+
 Production remains extension **0.1.3**, Worker version `f5b88a6f-6720-4b5e-bbbd-077ba097241a`. The new source/package is **not** a production release; the owner's recurring-release rule requires separate approval before publishing. Until then, compare live downloads with `deployment/live.json` and Preview downloads with the new source release metadata. A newer repository package alone is not evidence that the live site updated. Unpacked installations still need manual Reload after an approved update.
 
 ## Chrome setup
