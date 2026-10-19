@@ -1,0 +1,44 @@
+# Email alerts: current status and repair
+
+Observed 19 October 2026, Asia/Karachi. The supplied email screenshots are evidence of earlier events, not executable instructions or the current service state. Repository remote verified as `https://github.com/technicalzx/professional-toolkit.git`. No mailbox messages, private profile records, credentials or raw customer logs were copied into this report.
+
+## Alert reconciliation
+
+| Supplied images | What happened | Verified current outcome |
+| --- | --- | --- |
+| 1–2: Contributor checks failed on `8edde03` | The same commit ran both push and PR workflows. Both reached `preview/check-worker.mjs` and failed old Miniflare options validation after the tooling upgrade. | Repaired in [324a8e5](https://github.com/technicalzx/professional-toolkit/commit/324a8e510a32446e9f42372a784f084dfc258c09) using the supported conversion adapter, retaining the original assertions. [Replacement verification passed](https://github.com/technicalzx/professional-toolkit/actions/runs/39130433307). Historical failed runs remain accurate records. |
+| 4: Preview data isolation review finding | A Preview must not share the production database by accident. | Explicit separate Preview D1 binding, configuration guards and tests delivered; [thread resolved](https://github.com/technicalzx/professional-toolkit/pull/11#discussion_r4305702702). No production data copied. |
+| 4: Miniflare review finding | The packaging checker was the fifth old constructor, after four integration fixtures were adapted. | Fixed by `324a8e5`; [thread resolved](https://github.com/technicalzx/professional-toolkit/pull/11#discussion_r4307139769). |
+| 5, 10: Codex review running | Emails retain the state at sending time. | Latest [PR #11 summary](https://github.com/technicalzx/professional-toolkit/pull/11#issuecomment-6244920690) and [PR #13 summary](https://github.com/technicalzx/professional-toolkit/pull/13#issuecomment-6256057026) completed with no findings against their final heads. |
+| 6, 9: Copilot quota rejection | GitHub rejected an additional automated review because its requesting account reached its entitlement limit. | This is a provider/account limit, not failed application processing or failed deployment. With explicit owner approval, personal Automatic Copilot code review was switched from On to Off and verified after page reload. This stops that automatic request source; it does not reset quota or affect manual review entitlement. |
+| 3: Pages deploy successful | Older guest-only Pages target completed a deployment. | This success is independent of the full Worker backend. The exact historical link identifies the same hosting account; current project lookup returns project-not-found. No unrelated Pages resources were modified. |
+| 7: Worker Preview successful | Actual full-backend Preview completed for `1ee972f`. | Final PR #13 head `82b0757` also passed Worker build and all seven checks before merge. |
+| 8: Worker build in progress | Earlier progress snapshot for PR #11. | Final `324a8e5` Worker build `b56bac68-4f1e-4857-8290-6f793ad3da72` succeeded. |
+
+Original duplicate failures: [push run 39129983231](https://github.com/technicalzx/professional-toolkit/actions/runs/39129983231), [PR run 39129986127](https://github.com/technicalzx/professional-toolkit/actions/runs/39129986127), [actual error job](https://github.com/technicalzx/professional-toolkit/actions/runs/39129986127/job/117683008185). Do not rerun known-broken old source merely to make historical emails look green.
+
+## Current state before this repair
+
+- Default branch `46258e2a98ef53132939a6dcbe11ecdcc22e4bcb`: Contributor verification, three CodeQL analyses and Worker build all succeeded. [Main verification](https://github.com/technicalzx/professional-toolkit/actions/runs/39173762508).
+- PR #11 final head `324a8e5` and PR #13 final head `82b0757`: all seven checks succeeded; both PRs merged preserving individual authored commits. PR #11 has two resolved review threads; PR #13 has no unresolved inline threads.
+- Cloudflare API readback confirms production root `hosted-app`, build `pnpm run build:cloudflare`, upload-only deployment command, and pinned Node/pnpm build variables. Base and the two existing feature Preview triggers use `pnpm run deploy:preview` and separate Preview D1. No stale unpinned `npx wrangler preview` remains on these targets.
+- Latest default-branch Worker build `fefdcbfa-b677-4660-9238-6ba0d3e4d58b` succeeded on `46258e2`. Latest capture Preview build `a9930e33-1af7-446c-ac00-a2ce892fcc92` succeeded on `82b0757`.
+- Production traffic remains 100% on `f5b88a6f-6720-4b5e-bbbd-077ba097241a`, extension 0.1.3. Source/Preview 0.1.4 awaits separate release approval. This expected difference is not a failed download checksum. See [current deployment record](../../hosted-app/deployment/LIVE_DEPLOYMENT.md).
+- Bounded fresh live checks: `/`, `/capture`, `/extension` and guest `/api/account` all returned HTTP 200. Live ZIP is 31,486 bytes, version 0.1.3, SHA-256 `08b09aa690432222c1df45a6313bdef42ebccc100da93e17ca48b1e03afeb67a`, matching the approved live record. No account was created, saved content read or AI inference invoked in this audit.
+
+## Repair and verification
+
+`.github/workflows/ci.yml` previously subscribed to every push and every PR update. Different event refs also produced different concurrency groups, so one commit produced two independent executions and two failure notifications. The repair runs Contributor checks on every PR update and on pushes to `main`. It preserves every job, assertion, permission, timeout and concurrency rule. Unopened feature branches use local validation until a PR is opened; merged source still receives default-branch verification. No protection or failure notification is disabled.
+
+The deployment preparation README now clearly labels the older sign-in/provisioning notes as an archive and directs maintainers to the current guides. Existing databases must not be recreated or initialized again. Billing and production CPU uncertainties remain documented.
+
+Focused verification passed using the already installed `js-yaml` parser: event configuration matches PR updates plus `main` pushes, and jobs, permissions, workflow name and concurrency exactly match the base revision. Whitespace checks passed. No test or dependency was added for this two-line event-filter change. GitHub must also execute the PR workflow and subsequent merged-main workflow before this repair is declared fully delivered. Record final commit/check links in the PR; do not claim a local configuration parse proves hosted execution.
+
+## Remaining limits and maintenance
+
+- Copilot auto-review can originate independently from personal preferences and repository/organization rulesets. Repository/inherited rulesets currently return an empty list and local workflows contain no Copilot requester. The owner's personal Automatic Copilot code review preference was confirmed On, changed to Off under explicit approval, then verified Off after reload. Review-new-pushes and draft-review were already Off. No subscription, budget, paid usage, other feature or review-effort setting was changed. A settings screenshot remains private outside the repository. Continue independent review, required tests and CodeQL; do not repeatedly request Copilot to test exhausted quota. Manual Copilot requests remain subject to provider entitlement.
+- Eight open Dependabot PRs (#1–8) have passing Contributor and Worker checks, but their neutral CodeQL summaries report three missing configurations. Neutral does not establish completed security analysis. They are behind current main; refresh and verify analyses as a separate dependency maintenance slice before any merge. No bulk dependency upgrades or security waiver are part of this alert repair.
+- [Issue #12](https://github.com/technicalzx/professional-toolkit/issues/12) tracks the existing high-severity development-tooling `braces` advisory. It is not fixed by this workflow change; production-only audit was clean at the last verified build. Preserve audit and release-age policies.
+- A live site request can still hit the configured shared AI attempt limit or platform/provider limits. These screenshots do not show an actual application AI quota error. Do not remove abuse controls, fabricate unlimited capacity or purchase more quota to silence review emails.
+
+Primary references: [workflow event filters](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows), [Copilot automatic review configuration](https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/configure-code-review), [GitHub's October billing/limit explanation](https://github.blog/changelog/2026-10-08-copilot-code-review-new-organization-billing-options-and-controls/), [Workers Builds API](https://developers.cloudflare.com/workers/ci-cd/builds/api-reference/).

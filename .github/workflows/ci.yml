@@ -1,6 +1,8 @@
 name: Contributor checks
 on:
   push:
+    # Check each PR once, then verify the merged result on the default branch.
+    branches: [main]
   pull_request:
 permissions:
   contents: read
