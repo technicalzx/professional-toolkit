@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   validateSnapshot,
   validateHandoff,
@@ -17,6 +17,7 @@ import "./capture.css";
 
 type Snapshot = ReturnType<typeof validateSnapshot>;
 type Report = Record<string, any>;
+type Operation = { kind: "ai" | "save" | "import" | "restore" };
 export default function Capture() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null),
     [prompt, setPrompt] = useState(
@@ -28,6 +29,22 @@ export default function Capture() {
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [consent, setConsent] = useState(false);
+  // A synchronous lock also covers events queued before React disables controls.
+  // Each owner token prevents a cancelled restore from unlocking another action.
+  const pendingOperation = useRef<Operation | null>(null);
+  const [aiAttempt, setAiAttempt] = useState<"idle" | "pending" | "failed">("idle");
+  function beginOperation(kind: Operation["kind"]) {
+    if (pendingOperation.current) return null;
+    const operation = { kind };
+    pendingOperation.current = operation;
+    setBusy(true);
+    return operation;
+  }
+  function finishOperation(operation: Operation) {
+    if (pendingOperation.current !== operation) return;
+    pendingOperation.current = null;
+    setBusy(false);
+  }
   const [websiteOrigin, setWebsiteOrigin] = useState("this website");
   const [source, setSource] = useState(""),
     [title, setTitle] = useState(""),
@@ -39,6 +56,7 @@ export default function Capture() {
     setTitle(next.title);
     setText(next.text);
     setReport(null);
+    setAiAttempt("idle");
     setConsent(false);
     setError("");
   }
@@ -72,6 +90,10 @@ export default function Capture() {
       }
       try {
         const capture = validateHandoff(event.data, nonce);
+        if (pendingOperation.current)
+          throw Error(
+            "Feedback is busy. Your current source and draft are unchanged. Wait for processing to finish, then send this snapshot again.",
+          );
         load(capture.snapshot);
         setPrompt(capture.prompt);
         consumed.add(nonce);
@@ -96,7 +118,8 @@ export default function Capture() {
     }
     window.addEventListener("message", receive);
     const id = new URLSearchParams(location.search).get("report");
-    if (id)
+    const restoreOperation = id ? beginOperation("restore") : null;
+    if (restoreOperation)
       fetch("/api/reports", { cache: "no-store" })
         .then(async (response) => {
           const data = await readAccountResponse(response);
@@ -115,9 +138,13 @@ export default function Capture() {
         })
         .catch((e) => {
           if (!cancelled) setError(e.message);
+        })
+        .finally(() => {
+          if (!cancelled) finishOperation(restoreOperation);
         });
     return () => {
       cancelled = true;
+      if (restoreOperation) finishOperation(restoreOperation);
       window.removeEventListener("message", receive);
     };
   }, []);
@@ -139,6 +166,7 @@ export default function Capture() {
   }
   function invalidate() {
     setReport(null);
+    setAiAttempt("idle");
     setConsent(false);
     setError("");
     setNotice("");
@@ -162,11 +190,13 @@ export default function Capture() {
     });
   }
   function reviewLocal() {
+    if (pendingOperation.current) return;
     setError("");
     try {
       const value = current();
       setSnapshot(value);
       setReport(localReview(value, prompt));
+      setAiAttempt("idle");
       setNotice(
         "Local review complete. Custom requests select matching excerpts; use AI review for an open-ended answer.",
       );
@@ -175,6 +205,7 @@ export default function Capture() {
     }
   }
   function useInProject() {
+    if (pendingOperation.current) return;
     try {
       const value = current();
       sessionStorage.setItem(EVIDENCE_DRAFT_KEY, createEvidenceDraft(value));
@@ -188,9 +219,11 @@ export default function Capture() {
     }
   }
   async function reviewAI() {
-    setBusy(true);
+    const operation = beginOperation("ai");
+    if (!operation) return;
     setError("");
-    setReport(null);
+    setNotice("");
+    setAiAttempt("pending");
     try {
       const value = current();
       const response = await fetch("/api/capture/review", {
@@ -206,18 +239,27 @@ export default function Capture() {
       const restored = restoreCapturedReview(result.report);
       setSnapshot(value);
       setReport(restored);
+      setAiAttempt("idle");
       setNotice(
         "AI review complete. Check the source quotes and recommendations before saving.",
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "AI review failed.");
+      const message = e instanceof Error ? e.message : "AI review failed.";
+      setError(
+        message +
+          (report
+            ? " Your previous review and draft are unchanged. You can edit, download or save them, or try again."
+            : ""),
+      );
+      setAiAttempt("failed");
     } finally {
-      setBusy(false);
+      finishOperation(operation);
     }
   }
   async function save() {
     if (!report) return;
-    setBusy(true);
+    const operation = beginOperation("save");
+    if (!operation) return;
     setError("");
     try {
       const body = JSON.stringify({ report: { ...report, tool: "capture" } });
@@ -238,7 +280,7 @@ export default function Capture() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Saving failed.");
     } finally {
-      setBusy(false);
+      finishOperation(operation);
     }
   }
   function download(value: unknown, name: string) {
@@ -253,6 +295,9 @@ export default function Capture() {
   }
   async function importFile(file: File | undefined) {
     if (!file) return;
+    const operation = beginOperation("import");
+    if (!operation) return;
+    setError("");
     try {
       if (file.size > 150000)
         throw Error("Choose a snapshot smaller than 150 KB.");
@@ -266,6 +311,8 @@ export default function Capture() {
       setNotice("Snapshot imported. Review the content and its source.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invalid JSON snapshot.");
+    } finally {
+      finishOperation(operation);
     }
   }
   return (
@@ -359,6 +406,7 @@ export default function Capture() {
             maxLength={2048}
             disabled={busy}
             onChange={(e) => {
+              if (pendingOperation.current) return;
               setSource(e.target.value);
               setSnapshot(null);
               invalidate();
@@ -373,6 +421,7 @@ export default function Capture() {
             maxLength={200}
             disabled={busy}
             onChange={(e) => {
+              if (pendingOperation.current) return;
               setTitle(e.target.value);
               invalidate();
             }}
@@ -386,6 +435,7 @@ export default function Capture() {
             maxLength={20000}
             disabled={busy}
             onChange={(e) => {
+              if (pendingOperation.current) return;
               setText(e.target.value);
               invalidate();
             }}
@@ -399,6 +449,7 @@ export default function Capture() {
             maxLength={1500}
             disabled={busy}
             onChange={(e) => {
+              if (pendingOperation.current) return;
               setPrompt(e.target.value);
               invalidate();
             }}
@@ -434,6 +485,7 @@ export default function Capture() {
             className="secondary"
             disabled={busy}
             onClick={() => {
+              if (pendingOperation.current) return;
               setSnapshot(null);
               setText("");
               setTitle("");
@@ -449,7 +501,9 @@ export default function Capture() {
             type="checkbox"
             checked={consent}
             disabled={busy}
-            onChange={(e) => setConsent(e.target.checked)}
+            onChange={(e) => {
+              if (!pendingOperation.current) setConsent(e.target.checked);
+            }}
           />
           <span>
             Allow this selected snapshot and request to be sent to the
@@ -489,6 +543,16 @@ export default function Capture() {
         <section className="card workflow-results">
           <h2>{report.title}</h2>
           <p>{report.explanation}</p>
+          {aiAttempt === "pending" && (
+            <p role="status" className="auth-message">
+              Generating replacement feedback. Your previous review and draft are kept below until a new review succeeds.
+            </p>
+          )}
+          {aiAttempt === "failed" && (
+            <p className="sync-note">
+              Previous feedback retained. The failed attempt produced no replacement review.
+            </p>
+          )}
           {report.mode === "local" ? (
             <>
               <h3>Observed text checks</h3>
@@ -524,7 +588,46 @@ export default function Capture() {
             <>
               <h3>Answer to your request</h3>
               <p>{report.summary}</p>
-              {report.improvedDraft && <section className="recommendation"><h3>Suggested profile rewrite</h3><label className="field"><span>Edit your improved draft</span><textarea rows={9} maxLength={2200} value={report.improvedDraft} onChange={e=>setReport({...report,improvedDraft:e.target.value || "[Write your revised profile here]",draftEdited:true})}/></label><button className="secondary" onClick={async()=>{try{await navigator.clipboard.writeText(report.improvedDraft);setNotice("Improved draft copied.");}catch{setError("Clipboard unavailable. Select the draft or download the review.");}}}>Copy improved draft</button><p>{report.draftEdited?"AI-generated draft with your edits. Check every claim before publishing.":"AI-generated draft. Check every claim before publishing."}</p></section>}
+              {report.improvedDraft && (
+                <section className="recommendation">
+                  <h3>Suggested profile rewrite</h3>
+                  <label className="field">
+                    <span>Edit your improved draft</span>
+                    <textarea
+                      rows={9}
+                      maxLength={2200}
+                      value={report.improvedDraft}
+                      disabled={busy}
+                      onChange={(e) => {
+                        if (pendingOperation.current) return;
+                        setReport({
+                          ...report,
+                          improvedDraft: e.target.value || "[Write your revised profile here]",
+                          draftEdited: true,
+                        });
+                      }}
+                    />
+                  </label>
+                  <button
+                    className="secondary"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(report.improvedDraft);
+                        setNotice("Improved draft copied.");
+                      } catch {
+                        setError("Clipboard unavailable. Select the draft or download the review.");
+                      }
+                    }}
+                  >
+                    Copy improved draft
+                  </button>
+                  <p>
+                    {report.draftEdited
+                      ? "AI-generated draft with your edits. Check every claim before publishing."
+                      : "AI-generated draft. Check every claim before publishing."}
+                  </p>
+                </section>
+              )}
               {report.nextSteps?.length>0 && <section><h3>Your next steps</h3><ol>{report.nextSteps.map((step:string,i:number)=><li key={i}>{step}</li>)}</ol></section>}
               <h3>What to improve and why</h3>
               {report.findings.map(
