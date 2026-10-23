@@ -3,7 +3,18 @@ import assert from 'node:assert/strict';
 import {cloudflareBuildEnvironment,cloudflarePreviewConfig,verifyCloudflareBuild} from '../scripts/build-cloudflare.mjs';
 
 const manifest={worker:'professional-toolkit',database_name:'professional-toolkit',database_id:'11111111-2222-4333-8444-555555555555',account_id:'1'.repeat(32),ai_model:'@cf/meta/llama-3.1-8b-instruct-fp8-fast'};
-const config=env=>({name:'professional-toolkit',d1_databases:[{binding:'DB',database_name:'professional-toolkit',database_id:env.TOOLKIT_DATABASE_ID}],vars:{TOOLKIT_AI_MODEL:env.TOOLKIT_AI_MODEL},ai:{binding:'AI'}});
+const config=env=>({name:'professional-toolkit',d1_databases:[{binding:'DB',database_name:'professional-toolkit',database_id:env.TOOLKIT_DATABASE_ID}],vars:{TOOLKIT_AI_MODEL:env.TOOLKIT_AI_MODEL,TOOLKIT_IMPORT_ALLOWED_ORIGINS:env.TOOLKIT_IMPORT_ALLOWED_ORIGINS},ai:{binding:'AI'}});
+
+test('import origins are disabled by default and validated before generating deployment configuration',()=>{
+ assert.equal(cloudflareBuildEnvironment(manifest,{}).TOOLKIT_IMPORT_ALLOWED_ORIGINS,'[]');
+ const env=cloudflareBuildEnvironment(manifest,{TOOLKIT_IMPORT_ALLOWED_ORIGINS:'["https://Docs.Example.com/","https://docs.example.com"]',TOOLKIT_PREVIEW_DATABASE_ID:'abcdefab-1234-4567-8901-abcdefabcdef'});
+ assert.equal(env.TOOLKIT_IMPORT_ALLOWED_ORIGINS,'["https://docs.example.com"]');
+ const production=config(env);
+ assert.doesNotThrow(()=>verifyCloudflareBuild(production,manifest,env));
+ assert.equal(cloudflarePreviewConfig(production,manifest,env).previews.vars.TOOLKIT_IMPORT_ALLOWED_ORIGINS,env.TOOLKIT_IMPORT_ALLOWED_ORIGINS);
+ for(const policy of ['*','["https://*.example.com"]','["https://example.com/private"]','["http://example.com"]','["https://linkedin.com"]'])assert.throws(()=>cloudflareBuildEnvironment(manifest,{TOOLKIT_IMPORT_ALLOWED_ORIGINS:policy}));
+ for(const policy of [undefined,'[]','["https://other.example.com"]'])assert.throws(()=>verifyCloudflareBuild({...production,vars:{...production.vars,TOOLKIT_IMPORT_ALLOWED_ORIGINS:policy}},manifest,env),/import origins/);
+});
 
 test('Cloudflare build uses recorded public configuration and retains explicit valid overrides',()=>{
  const defaults=cloudflareBuildEnvironment(manifest,{});

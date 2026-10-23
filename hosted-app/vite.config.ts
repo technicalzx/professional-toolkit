@@ -4,6 +4,7 @@ import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { sites } from "./build/sites-vite-plugin";
 import { connectorPreview } from "./build/connector-preview-plugin.mjs";
+import { parseImportAllowedOrigins } from "./lib/toolkit/importer.mjs";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -37,6 +38,7 @@ const localBindingConfig = {
 };
 
 export default defineConfig(async ({ command }) => {
+  const importOrigins=JSON.stringify([...parseImportAllowedOrigins(process.env.TOOLKIT_IMPORT_ALLOWED_ORIGINS)]);
   // Use Miniflare's local Request.cf placeholder unless fetching is requested.
   process.env.CLOUDFLARE_CF_FETCH_ENABLED ??= "false";
   process.env.WRANGLER_SEND_METRICS ??= "false";
@@ -53,7 +55,8 @@ export default defineConfig(async ({ command }) => {
 
   if(process.env.TOOLKIT_DEPLOY_TARGET==='cloudflare')return {
     plugins:[vinext(),cloudflare({viteEnvironment:{name:'rsc',childEnvironments:['ssr']},inspectorPort:false,config:{
-      ...(process.env.TOOLKIT_AI_MODEL?{ai:{binding:'AI'},vars:{TOOLKIT_AI_MODEL:process.env.TOOLKIT_AI_MODEL}}:{}),
+      ...(process.env.TOOLKIT_AI_MODEL?{ai:{binding:'AI'}}:{}),
+      vars:{TOOLKIT_IMPORT_ALLOWED_ORIGINS:importOrigins,...(process.env.TOOLKIT_AI_MODEL?{TOOLKIT_AI_MODEL:process.env.TOOLKIT_AI_MODEL}:{})},
       observability:{enabled:true,logs:{enabled:true,invocation_logs:false,head_sampling_rate:1}},
       name:'professional-toolkit',main:'./deployment/cloudflare-worker.ts',compatibility_date:'2026-10-12',compatibility_flags:['nodejs_compat'],
       d1_databases:[{binding:'DB',database_name:'professional-toolkit',database_id:process.env.TOOLKIT_DATABASE_ID||SITE_CREATOR_PLACEHOLDER_DATABASE_ID}]
@@ -77,6 +80,7 @@ export default defineConfig(async ({ command }) => {
         inspectorPort: false,
         config: {
           ...localBindingConfig,
+          vars: { TOOLKIT_IMPORT_ALLOWED_ORIGINS: importOrigins },
           ...(command === "serve"
             ? {
                 services: [
