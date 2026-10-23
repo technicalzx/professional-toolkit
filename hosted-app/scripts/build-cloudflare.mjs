@@ -2,6 +2,7 @@ import {spawnSync} from 'node:child_process';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {parseImportAllowedOrigins} from '../lib/toolkit/importer.mjs';
 
 const appRoot=fileURLToPath(new URL('../',import.meta.url));
 const placeholderDatabase=/^00000000-0000-[0-9a-f]{4}-[0-9a-f]{4}-000000000000$/i;
@@ -20,6 +21,7 @@ export function cloudflareBuildEnvironment(manifest,environment=process.env){
  const env={...environment,TOOLKIT_DEPLOY_TARGET:'cloudflare',
   TOOLKIT_DATABASE_ID:environment.TOOLKIT_DATABASE_ID??manifest.database_id,
   TOOLKIT_AI_MODEL:environment.TOOLKIT_AI_MODEL??manifest.ai_model,
+  TOOLKIT_IMPORT_ALLOWED_ORIGINS:JSON.stringify([...parseImportAllowedOrigins(environment.TOOLKIT_IMPORT_ALLOWED_ORIGINS)]),
   CLOUDFLARE_ACCOUNT_ID:environment.CLOUDFLARE_ACCOUNT_ID??manifest.account_id};
  if(typeof manifest.worker!=='string'||!/^professional-toolkit$/.test(manifest.worker))throw Error('deployment/live.json must name the professional-toolkit Worker.');
  if(typeof manifest.database_name!=='string'||manifest.database_name!=='professional-toolkit')throw Error('deployment/live.json must name the professional-toolkit database.');
@@ -50,6 +52,8 @@ export function verifyCloudflareBuild(config,manifest,env){
  const database=config.d1_databases?.find(binding=>binding.binding==='DB');
  if(database?.database_id!==env.TOOLKIT_DATABASE_ID||database.database_name!==manifest.database_name)throw Error('Generated configuration does not preserve the selected D1 database binding.');
  if(config.vars?.TOOLKIT_AI_MODEL!==env.TOOLKIT_AI_MODEL||config.ai?.binding!=='AI')throw Error('Generated configuration must preserve the AI binding and configured model.');
+ const importPolicy=value=>JSON.stringify([...parseImportAllowedOrigins(value)]);
+ if(importPolicy(config.vars?.TOOLKIT_IMPORT_ALLOWED_ORIGINS)!==importPolicy(env.TOOLKIT_IMPORT_ALLOWED_ORIGINS))throw Error('Generated configuration must preserve the exact operator-approved import origins.');
  if(config.account_id!==undefined&&config.account_id!==env.CLOUDFLARE_ACCOUNT_ID)throw Error('Generated configuration targets a different Cloudflare account.');
 }
 

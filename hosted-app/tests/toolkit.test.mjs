@@ -23,24 +23,24 @@ test('robots longest-match, wildcard and specific group rules',()=>{
 const html='<html><body>Public portfolio '+('real useful content '.repeat(20))+'</body></html>';
 const extract=async()=>({title:'Portfolio',text:'Useful public experience '.repeat(20),description:'Services',headings:[]});
 test('successful import has provenance and retrieval timestamp',async()=>{
- const r=await importPage('https://example.com/services',{dns:async()=>{},extract,fetcher:async url=>url.endsWith('/robots.txt')?new Response('',{status:404}):new Response(html,{headers:{'Content-Type':'text/html'}})});
+ const r=await importPage('https://example.com/services',{allowedOrigins:['https://example.com'],dns:async()=>{},extract,fetcher:async url=>url.endsWith('/robots.txt')?new Response('',{status:404}):new Response(html,{headers:{'Content-Type':'text/html'}})});
  assert.equal(r.provenance,'Imported public HTML');assert.equal(r.sourceUrl,'https://example.com/services');assert.ok(r.importedAt);
 });
 test('redirect to internal URL is rejected before second request',async()=>{
  let pages=0;
- await assert.rejects(importPage('https://example.com',{dns:async()=>{},extract,fetcher:async url=>{if(url.endsWith('/robots.txt'))return new Response('',{status:404});pages++;return new Response(null,{status:302,headers:{location:'https://127.0.0.1/secret'}})}}),/public HTTPS/);
+ await assert.rejects(importPage('https://example.com',{allowedOrigins:['https://example.com'],dns:async()=>{},extract,fetcher:async url=>{if(url.endsWith('/robots.txt'))return new Response('',{status:404});pages++;return new Response(null,{status:302,headers:{location:'https://127.0.0.1/secret'}})}}),/public HTTPS/);
  assert.equal(pages,1);
 });
 test('platform imports require authorized access or pasted text',async()=>{
  await assert.rejects(importPage('https://www.linkedin.com/in/person',{fetcher:()=>{throw Error('Must not fetch')}}),/authorized integration/);
 });
 test('robots disallow prevents page request',async()=>{
- let count=0;await assert.rejects(importPage('https://example.com/private',{dns:async()=>{},extract,fetcher:async()=>{count++;return new Response('User-agent: *\nDisallow: /private')}}),/disallows/);assert.equal(count,1);
+ let count=0;await assert.rejects(importPage('https://example.com/private',{allowedOrigins:['https://example.com'],dns:async()=>{},extract,fetcher:async()=>{count++;return new Response('User-agent: *\nDisallow: /private')}}),/disallows/);assert.equal(count,1);
 });
 test('oversized content is bounded even without content-length',async()=>{await assert.rejects(readLimited(new Response('x'.repeat(200)),100),/size limit/)});
 test('non-HTML and human verification return actionable errors',async()=>{
  for(const [response,pattern] of [[()=>new Response('{}',{headers:{'Content-Type':'application/json'}}),/Only public HTML/],[()=>new Response('<html>verify you are human</html>',{headers:{'Content-Type':'text/html'}}),/human verification/]]){
-  await assert.rejects(importPage('https://example.com',{dns:async()=>{},extract,fetcher:async url=>url.endsWith('/robots.txt')?new Response('',{status:404}):response()}),pattern);
+  await assert.rejects(importPage('https://example.com',{allowedOrigins:['https://example.com'],dns:async()=>{},extract,fetcher:async url=>url.endsWith('/robots.txt')?new Response('',{status:404}):response()}),pattern);
  }
 });
 test('audit exposes weights, evidence and limitations',()=>{
