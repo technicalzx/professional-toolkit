@@ -10,6 +10,10 @@ const fail=(message,status=400)=>{throw new AuthError(message,status)};
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const now=()=>Math.floor(Date.now()/1000);
 const stmt=(db,sql,...values)=>db.prepare(sql).bind(...values);
+// Recheck the exact authorizing session inside each ordinary-report mutation.
+// A session may expire or be revoked while the request body is still arriving.
+const activeReportSession='EXISTS (SELECT 1 FROM sessions s JOIN users u ON u.id=s.user_id AND u.version=s.version WHERE s.hash=? AND s.user_id=? AND s.version=? AND s.expires>?)';
+const reportSessionValues=user=>[user.session_hash,user.id,user.version,now()];
 export function passwordHash(password){const salt=randomBytes(16).toString('hex');return `scrypt$32768$8$3$${salt}$${scryptSync(password,salt,32,KDF).toString('hex')}`}
 export function verifyPassword(password,stored){
  const parts=stored?.split('$');
@@ -148,14 +152,21 @@ export async function reportStore(request,db){
    if(typeof data.id!=='string')fail('Choose a report.');
    const managed=await stmt(db,"SELECT id FROM reports WHERE id=? AND user_id=? AND json_extract(content,'$.kind')=?",data.id,user.id,'project-workspace').first();
    if(managed)fail('Delete this project from the project workspace so its current revision can be checked.',409);
-   await stmt(db,"DELETE FROM reports WHERE id=? AND user_id=? AND COALESCE(json_extract(content,'$.kind'),'')<>?",data.id,user.id,'project-workspace').run();return json({ok:true});
+   const removed=await stmt(db,`DELETE FROM reports WHERE id=? AND user_id=? AND COALESCE(json_extract(content,'$.kind'),'')<>? AND ${activeReportSession}`,data.id,user.id,'project-workspace',...reportSessionValues(user)).run();
+   // Preserve idempotent deletion of absent/foreign records without treating a
+   // revoked session as a successful mutation.
+   if(!removed.meta.changes&&!await currentUser(request,db))fail('Your session ended. Sign in again before changing reports.',401);
+   return json({ok:true});
   }
   const value=data.report;
   if(!value||typeof value!=='object'||Array.isArray(value)||typeof value.title!=='string'||value.title.length>200||typeof value.kind!=='string')fail('Invalid report.');
   if(value.kind==='project-workspace')fail('Save projects through the project workspace so validation and revision checks are applied.');
   const id=crypto.randomUUID(),content=JSON.stringify(value);
-  const r=await stmt(db,"INSERT INTO reports (id,user_id,content,created) SELECT ?,?,?,? WHERE (SELECT count(*) FROM reports WHERE user_id=? AND COALESCE(json_extract(content,'$.kind'),'')<>?)<50",id,user.id,content,now(),user.id,'project-workspace').run();
-  if(!r.meta.changes)fail('Your account holds 50 reports. Export and delete an old report first.',409);
+  const r=await stmt(db,`INSERT INTO reports (id,user_id,content,created) SELECT ?,?,?,? WHERE (SELECT count(*) FROM reports WHERE user_id=? AND COALESCE(json_extract(content,'$.kind'),'')<>?)<50 AND ${activeReportSession}`,id,user.id,content,now(),user.id,'project-workspace',...reportSessionValues(user)).run();
+  if(!r.meta.changes){
+   if(!await currentUser(request,db))fail('Your session ended. Sign in again before changing reports.',401);
+   fail('Your account holds 50 reports. Export and delete an old report first.',409);
+  }
   return json({id},201);
  }catch(e){if(e instanceof AuthError)return json({error:e.message},e.status);console.error('report_operation_failed');return json({error:'Report storage unavailable. Please try again.'},503)}
 }
